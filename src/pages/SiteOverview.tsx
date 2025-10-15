@@ -1,4 +1,3 @@
-import React from "react";
 import { BarChart3, Users, Package, ClipboardList } from "lucide-react";
 
 const SiteOverview = () => {
