@@ -87,7 +87,7 @@ const SiteMembers = () => {
                   key={m.id}
                   className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
                 >
-                  <TableCell className="flex items-center gap-3 py-3">
+                  <TableCell className="flex items-center py-3">
                     <img
                       src={m.avatar}
                       alt={m.name}

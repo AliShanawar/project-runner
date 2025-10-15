@@ -43,7 +43,6 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />}>
             <Route index element={<Navigate to="/dashboard/tasks" replace />} />
             <Route path="tasks" element={<Tasks />} />
-            <Route path="tasks/:id" element={<TaskDetail />} />
             <Route path="sites/task" element={<Tasks />} />
             <Route path="requests" element={<Requests />} />
             <Route path="requests/:id" element={<RequestDetail />} />
@@ -53,6 +52,7 @@ const App = () => (
               <Route path="overview" element={<SiteOverview />} />
               <Route path="members" element={<SiteMembers />} />
               <Route path="tasks" element={<SiteTasks />} />
+              <Route path="tasks/:id" element={<TaskDetail />} />
               <Route
                 path="/dashboard/sites/:siteId/inventory"
                 element={<SiteInventory />}

@@ -1,112 +1,136 @@
-import React from "react";
-import { Calendar, Clock, Truck, Package } from "lucide-react";
+import { useState } from "react";
+import { Search } from "lucide-react";
+import { TaskDataTable } from "@/components/TaskDataTable";
+import { taskColumns, type Task } from "@/components/TaskColumns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
-const tasks = [
+// Mock data
+const mockTasks: Task[] = [
   {
     id: 1,
-    status: "Completed",
-    assignedBy: "Alex Johnson",
-    assignedTo: "Ethan Carter",
-    date: "12 Dec",
-    time: "02:30 PM",
-    items: [
-      { name: "Steel Rods", qty: "10 Tons" },
-      { name: "Bricks", qty: "10,000 Units" },
-    ],
-    note: "Delivery completed successfully and verified on site.",
+    assignedTo: { name: "Lily Thompson" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Pending",
   },
   {
     id: 2,
-    status: "Cancelled",
+    assignedTo: { name: "Ethan Carter" },
     assignedBy: "Lily Thompson",
-    assignedTo: "Noah Smith",
-    date: "14 Dec",
-    time: "11:00 AM",
-    items: [{ name: "Paint Buckets", qty: "50 Units" }],
-    note: "Cancelled due to weather conditions.",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Completed",
+  },
+  {
+    id: 3,
+    assignedTo: { name: "Isabella Kim" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Cancelled",
+  },
+  {
+    id: 4,
+    assignedTo: { name: "Liam Johnson" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Completed",
+  },
+  {
+    id: 5,
+    assignedTo: { name: "Emma Rodriguez" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Pending",
+  },
+  {
+    id: 6,
+    assignedTo: { name: "Noah Smith" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Completed",
+  },
+  {
+    id: 7,
+    assignedTo: { name: "Olivia Martinez" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Pending",
+  },
+  {
+    id: 8,
+    assignedTo: { name: "Oliver Brown" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Completed",
+  },
+  {
+    id: 9,
+    assignedTo: { name: "Ava Patel" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Pending",
+  },
+  {
+    id: 10,
+    assignedTo: { name: "Lucas Davis" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Completed",
+  },
+  {
+    id: 11,
+    assignedTo: { name: "Mia Johnson" },
+    assignedBy: "Lily Thompson",
+    material: { type: "1 Ton", quantity: "200 unit" },
+    status: "Pending",
   },
 ];
 
 const SiteTasks = () => {
+  const [memberFilter, setMemberFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Site Tasks</h1>
-        <p className="text-gray-500 text-sm">
-          View all tasks assigned to this site, along with their current status.
-        </p>
-      </div>
+    <div className=" rounded-lg p-8 bg-white">
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Task</h1>
+        </div>
 
-      {/* Task List */}
-      <div className="space-y-4">
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4"
-          >
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Task #{task.id}
-              </h2>
-              <span
-                className={`text-sm font-medium ${
-                  task.status === "Completed"
-                    ? "text-green-600"
-                    : "text-red-500"
-                }`}
-              >
-                {task.status}
-              </span>
-            </div>
+        {/* Filters */}
+        <div className="flex items-center gap-4">
+          <Select value={memberFilter} onValueChange={setMemberFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Member" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Members</SelectItem>
+              <SelectItem value="lily">Lily Thompson</SelectItem>
+              <SelectItem value="ethan">Ethan Carter</SelectItem>
+              <SelectItem value="isabella">Isabella Kim</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <p className="text-sm text-gray-500">{task.note}</p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4 text-[#8A5BD5]" />
-                <span>
-                  <strong>Assigned By:</strong> {task.assignedBy}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4 text-[#8A5BD5]" />
-                <span>
-                  <strong>Assigned To:</strong> {task.assignedTo}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#8A5BD5]" />
-                <span>
-                  <strong>Date:</strong> {task.date}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#8A5BD5]" />
-                <span>
-                  <strong>Time:</strong> {task.time}
-                </span>
-              </div>
-            </div>
-
-            {/* Items */}
-            <div className="flex flex-wrap gap-4 pt-3">
-              {task.items.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-2 bg-gray-50"
-                >
-                  <Package className="w-4 h-4 text-[#8A5BD5]" />
-                  <div>
-                    <p className="font-medium text-gray-800 text-sm">
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-gray-500">{item.qty}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
           </div>
-        ))}
+        </div>
+
+        {/* Data Table */}
+        <TaskDataTable columns={taskColumns} data={mockTasks} />
       </div>
     </div>
   );

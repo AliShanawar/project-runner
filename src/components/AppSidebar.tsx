@@ -24,6 +24,7 @@ import Logo from "./Logo";
 export function AppSidebar() {
   const logout = useAuthStore((state) => state.logout);
   const [collapsed, setCollapsed] = useState(false);
+  const { pathname } = useLocation();
 
   const siteMenu = [
     { title: "My Sites", url: "/dashboard/sites", icon: Globe },
@@ -32,27 +33,32 @@ export function AppSidebar() {
     { title: "Setting", url: "/dashboard/settings", icon: Settings },
   ];
 
-  const { pathname } = useLocation();
   const activeMenu = siteMenu;
+
+  // Auto-collapse when in industry workspace
+  const isIndustryWorkspace = pathname.startsWith("/dashboard/sites/");
+  const effectiveCollapsed = isIndustryWorkspace || collapsed;
 
   const isActiveMenu = (url: string) =>
     pathname === url || pathname.startsWith(`${url}/`);
 
   return (
     <Sidebar
-      className={`border-r border-gray-200 flex flex-col transition-all duration-300 ${
-        collapsed ? "w-20" : "w-64"
-      }`}
+      collapsible="icon"
+      className="border-r border-gray-200"
     >
       {/* Logo + Collapse Button */}
       <div className="p-6 flex items-center justify-between">
-        <Logo />
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-2 rounded-md hover:bg-gray-100 transition"
-        >
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button>
+        {!effectiveCollapsed && <Logo />}
+        {effectiveCollapsed && <div className="w-8 h-8" />}
+        {!isIndustryWorkspace && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-2 rounded-md hover:bg-gray-100 transition"
+          >
+            {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+        )}
       </div>
 
       {/* Main Content */}
@@ -74,10 +80,11 @@ export function AppSidebar() {
                             ? "!bg-[#8A5BD5] !text-white font-medium shadow-sm hover:!bg-[#8A5BD5] hover:!text-white"
                             : "text-gray-600 hover:text-[#8A5BD5] hover:bg-[#8A5BD5]/10"
                         }
+                        ${effectiveCollapsed ? "justify-center" : ""}
                       `}
                       >
                         <item.icon size={20} />
-                        {!collapsed && <span>{item.title}</span>}
+                        {!effectiveCollapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -92,11 +99,11 @@ export function AppSidebar() {
           <button
             onClick={logout}
             className={`flex items-center cursor-pointer gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5] transition-all w-full ${
-              collapsed ? "justify-center" : ""
+              effectiveCollapsed ? "justify-center" : ""
             }`}
           >
             <LogOut size={20} />
-            {!collapsed && <span>Logout</span>}
+            {!effectiveCollapsed && <span>Logout</span>}
           </button>
         </div>
       </SidebarContent>
