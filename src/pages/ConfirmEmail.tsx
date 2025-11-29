@@ -4,15 +4,17 @@ import AuthLayout from "@/layout/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
 
 const ConfirmEmail = () => {
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
-  const [timer, setTimer] = useState(60);
+  const [timer, setTimer] = useState(1);
   const navigate = useNavigate();
 
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
-  const verifyOtp = useAuthStore((state) => state.verifyOtp); // add in store
-  const resendOtp = useAuthStore((state) => state.resendOtp); // add in store
+  const verifyResetOtp = useAuthStore((state) => state.verifyResetOtp);
+  const resendOtp = useAuthStore((state) => state.resendOtp);
+  const isLoading = useAuthStore((state) => state.isLoading);
 
   // Countdown timer
   useEffect(() => {
@@ -47,15 +49,15 @@ const ConfirmEmail = () => {
     e.preventDefault();
     const code = otp.join("");
     if (code.length !== 6) {
-      alert("Please enter a valid 6-digit code");
+      toast.error("Please enter a valid 6-digit code");
       return;
     }
 
     try {
-      await verifyOtp(code);
+      await verifyResetOtp(code);
       navigate("/create-password");
-    } catch (err) {
-      alert("Invalid or expired code. Please try again.");
+    } catch (error) {
+      toast.error("Invalid or expired code. Please try again.");
     }
   };
 
@@ -107,21 +109,23 @@ const ConfirmEmail = () => {
             </p>
           ) : (
             <button
+              disabled={isLoading}
               type="button"
               onClick={handleResend}
               className="text-sm text-primary hover:text-[hsl(261,54%,54%)]"
             >
-              Send again
+              Resend Code
             </button>
           )}
         </div>
 
         {/* Submit button */}
         <Button
+          disabled={isLoading}
           type="submit"
           className="w-full h-12 bg-primary hover:bg-[hsl(261,54%,54%)] text-white font-semibold"
         >
-          NEXT
+          {isLoading ? "Verifying..." : "Verify"}
         </Button>
       </form>
     </AuthLayout>

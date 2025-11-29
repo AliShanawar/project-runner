@@ -1,13 +1,4 @@
-import { useState } from "react";
-import {
-  Globe,
-  FileText,
-  Users,
-  Settings,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Globe, FileText, Users, Settings, LogOut } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -20,11 +11,14 @@ import {
 } from "../components/ui/sidebar";
 import { useAuthStore } from "../store/authStore";
 import Logo from "./Logo";
+import { cn } from "@/lib/utils";
 
 export function AppSidebar() {
   const logout = useAuthStore((state) => state.logout);
-  const [collapsed, setCollapsed] = useState(false);
   const { pathname } = useLocation();
+  const pathSegments = pathname.split("/").filter(Boolean);
+  const isIconOnly =
+    pathname.startsWith("/dashboard/sites") && pathSegments.length > 2;
 
   const siteMenu = [
     { title: "My Sites", url: "/dashboard/sites", icon: Globe },
@@ -35,56 +29,67 @@ export function AppSidebar() {
 
   const activeMenu = siteMenu;
 
-  // Auto-collapse when in industry workspace
-  const isIndustryWorkspace = pathname.startsWith("/dashboard/sites/");
-  const effectiveCollapsed = isIndustryWorkspace || collapsed;
-
   const isActiveMenu = (url: string) =>
     pathname === url || pathname.startsWith(`${url}/`);
 
   return (
     <Sidebar
-      collapsible="icon"
-      className="border-r border-gray-200"
+      collapsible="none"
+      className={cn(
+        "relative border-r border-[#EAE6F3] bg-white shadow-[0_12px_30px_rgba(17,12,34,0.04)]",
+        isIconOnly ? "w-[84px]" : "w-[260px]"
+      )}
     >
-      {/* Logo + Collapse Button */}
-      <div className="p-6 flex items-center justify-between">
-        {!effectiveCollapsed && <Logo />}
-        {effectiveCollapsed && <div className="w-8 h-8" />}
-        {!isIndustryWorkspace && (
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-2 rounded-md hover:bg-gray-100 transition"
-          >
-            {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          </button>
+
+      {/* Logo */}
+      <div
+        className={cn(
+          "border-b border-[#EAE6F3] py-7",
+          isIconOnly ? "flex justify-center px-4" : "px-6"
         )}
+      >
+        <Logo />
       </div>
 
       {/* Main Content */}
-      <SidebarContent>
+      <SidebarContent className={cn("py-6", isIconOnly ? "px-2" : "px-3")}>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-2">
               {activeMenu.map((item) => {
                 const isActive = isActiveMenu(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className={cn(
+                        "flex items-center px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200",
+                        isIconOnly ? "justify-center" : "gap-3",
+                        isActive
+                          ? "bg-[#8A5BD5] text-white shadow-[0_14px_30px_rgba(138,91,213,0.2)]"
+                          : "text-[#8E8EA9] hover:bg-[#F4F1FD] hover:text-[#8A5BD5]"
+                      )}
+                    >
                       <NavLink
                         to={item.url}
-                        className={`
-                        flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
-                        ${
-                          isActive
-                            ? "!bg-[#8A5BD5] !text-white font-medium shadow-sm hover:!bg-[#8A5BD5] hover:!text-white"
-                            : "text-gray-600 hover:text-[#8A5BD5] hover:bg-[#8A5BD5]/10"
-                        }
-                        ${effectiveCollapsed ? "justify-center" : ""}
-                      `}
+                        className={cn(
+                          "flex items-center",
+                          isIconOnly ? "" : "gap-3"
+                        )}
                       >
-                        <item.icon size={20} />
-                        {!effectiveCollapsed && <span>{item.title}</span>}
+                        <item.icon
+                          size={22}
+                          className={cn(
+                            "transition-colors",
+                            isActive
+                              ? "text-white bg-[#8A5BD5] "
+                              : "text-[#B3ADC7]"
+                          )}
+                        />
+                        <span className={cn(isIconOnly && "sr-only")}>
+                          {item.title}
+                        </span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -95,15 +100,16 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Logout */}
-        <div className="mt-auto p-4">
+        <div className="mt-auto px-1 pt-6">
           <button
             onClick={logout}
-            className={`flex items-center cursor-pointer gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5] transition-all w-full ${
-              effectiveCollapsed ? "justify-center" : ""
-            }`}
+            className={cn(
+              "flex items-center cursor-pointer px-4 py-3 rounded-xl text-[#8E8EA9] hover:bg-[#F4F1FD] hover:text-[#8A5BD5] transition-all w-full",
+              isIconOnly ? "justify-center" : "gap-3"
+            )}
           >
-            <LogOut size={20} />
-            {!effectiveCollapsed && <span>Logout</span>}
+            <LogOut size={20} className="text-[#B3ADC7]" />
+            <span className={cn(isIconOnly && "sr-only")}>Logout</span>
           </button>
         </div>
       </SidebarContent>

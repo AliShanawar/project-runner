@@ -5,7 +5,8 @@ import AuthLayout from "@/layout/AuthLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-// import { useAuthStore } from "@/store/authStore";
+import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
 
 const CreatePassword = () => {
   const [password, setPassword] = useState("");
@@ -15,24 +16,24 @@ const CreatePassword = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // const resetPassword = useAuthStore((state) => state.resetPassword); // add this in store
+  const resetPassword = useAuthStore((state) => state.resetPassword);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (password !== confirm) {
-      alert("Passwords do not match!");
+      toast.error("Passwords do not match!");
       return;
     }
 
     setLoading(true);
     try {
-      // await resetPassword(password);
-      alert("Password updated successfully!");
+      await resetPassword(password);
+      toast.success("Password updated successfully!");
       navigate("/");
     } catch (err) {
       console.error(err);
-      alert("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

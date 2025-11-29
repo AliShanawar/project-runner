@@ -8,17 +8,18 @@ import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/store/authStore";
 import AuthLayout from "@/layout/AuthLayout";
 
-const SignIn = () => {
+export const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const isLoading = useAuthStore((state) => state.isLoading);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    login(email, password);
-    navigate("/dashboard");
+    await login(email, password);
+    navigate("/dashboard/sites");
   };
 
   return (
@@ -80,9 +81,10 @@ const SignIn = () => {
 
           <Button
             type="submit"
+            disabled={isLoading}
             className="w-full h-12 bg-primary hover:bg-[hsl(261,54%,54%)] text-white font-semibold"
           >
-            SIGN IN
+            {isLoading ? "SIGNING IN..." : "SIGN IN"}
           </Button>
         </form>
       </div>
@@ -90,4 +92,3 @@ const SignIn = () => {
   );
 };
 
-export default SignIn;

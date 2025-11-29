@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/layout/AuthLayout";
 import { Camera } from "lucide-react";
+import { toast } from "sonner";
 
 const CreateProfile = () => {
   const [name, setName] = useState("");
@@ -24,7 +25,7 @@ const CreateProfile = () => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name) {
-      alert("Please enter your name");
+      toast.error("Please enter your name");
       return;
     }
     // Save profile info (e.g. API call)

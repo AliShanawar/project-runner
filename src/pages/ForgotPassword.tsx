@@ -4,26 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/layout/AuthLayout";
-// import { useAuthStore } from "@/store/authStore";
+import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
   // const sendResetEmail = useAuthStore((state) => state.sendResetEmail); // define this in your store
   const navigate = useNavigate();
+  const sendResetEmail = useAuthStore((state) => state.sendResetEmail);
+  const isLoading = useAuthStore((state) => state.isLoading);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email) return;
-    setLoading(true);
     try {
-      // await sendResetEmail(email);
+      await sendResetEmail(email);
       navigate("/confirm-email");
     } catch (err) {
       console.error(err);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -58,18 +57,16 @@ const ForgotPassword = () => {
 
           <Button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full h-12 bg-primary hover:bg-[hsl(261,54%,54%)] text-white font-semibold"
           >
-            {loading ? "Sending..." : "Send Reset Link"}
+            {isLoading ? "Sending..." : "Send Reset Link"}
           </Button>
         </form>
 
         {/* Footer link */}
         <div className="mt-6 text-center">
-          <span className="text-gray-500 text-sm">
-            Remember your password?{" "}
-          </span>
+          <span className="text-gray-500 text-sm">Remember your password?</span>
           <Link
             to="/"
             className="text-sm font-medium text-primary hover:text-[hsl(261,54%,54%)]"

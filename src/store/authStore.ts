@@ -1,28 +1,27 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { authService } from "@/api/services/auth.service";
+import { setAuthToken, setRefreshToken, clearAuthTokens } from "@/api/client";
+import { clearDeviceInfo, getDeviceInfo } from "@/lib/deviceId";
+import type { User } from "@/types";
 
 /* ----------------------------- Types ----------------------------- */
-
-interface User {
-  email: string;
-  name?: string;
-  avatar?: string | null;
-  role?: "admin" | "employee";
-}
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  otp: string | null;
+  isLoading: boolean;
+  resetEmail: string | null; // Store email during password reset flow
 
   // Actions
   login: (email: string, password: string) => Promise<void>;
   sendResetEmail: (email: string) => Promise<void>;
   resendOtp: () => Promise<void>;
-  verifyOtp: (code: string) => Promise<void>;
+  verifyOtp: (otp: string) => Promise<void>;
   resetPassword: (password: string) => Promise<void>;
+  verifyResetOtp: (otp: string) => Promise<void>;
   updateProfile: (name: string, avatar: string | null) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 /* ----------------------------- Store ----------------------------- */
@@ -33,115 +32,221 @@ export const useAuthStore = create<AuthState>()(
       (set, get) => ({
         user: null,
         isAuthenticated: false,
-        otp: null,
+        isLoading: false,
+        resetEmail: null,
 
         /* -------------------------
          * LOGIN
          * ------------------------ */
         login: async (email, password) => {
-          console.log("🔐 Logging in with", email, password);
-          await new Promise((res) => setTimeout(res, 1000));
+          try {
+            set({ isLoading: true });
+            console.log("🔐 Logging in...", email);
 
-          // Simple role mock based on email pattern
-          const role = email.includes("admin") ? "admin" : "employee";
+            // Get device info
+            const device = getDeviceInfo();
 
-          set({
-            user: { email, role },
-            isAuthenticated: true,
-          });
-          console.log("✅ Login successful as", role);
+            // Call API
+            const response = await authService.login({
+              email,
+              password,
+              device,
+            });
+
+            // Store tokens
+            setAuthToken(response.token);
+            if (response.refreshToken) {
+              setRefreshToken(response.refreshToken);
+            }
+
+            // Update state
+            set({
+              user: response.user,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+
+            console.log("✅ Login successful", response.user);
+          } catch (error) {
+            console.error("❌ Login failed:", error);
+            set({ isLoading: false });
+            throw error;
+          }
         },
 
         /* -------------------------
          * SEND RESET EMAIL
          * ------------------------ */
         sendResetEmail: async (email) => {
-          console.log("📩 Sending password reset email to", email);
-          await new Promise((res) => setTimeout(res, 1200));
+          try {
+            console.log("📩 Sending password reset email to", email);
 
-          set({
-            user: { email },
-            isAuthenticated: false,
-          });
-          console.log("✅ Reset email sent");
+            await authService.forgotPassword({ email });
+
+            set({
+              resetEmail: email,
+              isAuthenticated: false,
+            });
+
+            console.log("✅ Reset email sent");
+          } catch (error) {
+            console.error("❌ Failed to send reset email:", error);
+            throw error;
+          }
         },
 
         /* -------------------------
          * RESEND OTP
          * ------------------------ */
         resendOtp: async () => {
-          console.log("📨 Resending OTP...");
-          await new Promise((res) => setTimeout(res, 800));
+          try {
+            set({ isLoading: true });
+            const { resetEmail } = get();
+            if (!resetEmail) {
+              throw new Error("No email set for OTP resend");
+            }
 
-          const newOtp = String(Math.floor(100000 + Math.random() * 900000));
-          set({ otp: newOtp });
-          console.log("✅ New OTP generated:", newOtp);
+            console.log("📨 Resending OTP...");
+
+            await authService.forgotPassword({ email: resetEmail });
+
+            console.log("✅ OTP resent successfully");
+            set({ isLoading: false });
+          } catch (error) {
+            console.error("❌ Failed to resend OTP:", error);
+            set({ isLoading: false });
+            throw error;
+          }
         },
 
         /* -------------------------
          * VERIFY OTP
          * ------------------------ */
-        verifyOtp: async (code) => {
-          console.log("🧩 Verifying OTP:", code);
-          await new Promise((res) => setTimeout(res, 800));
+        verifyOtp: async (otp) => {
+          try {
+            const { resetEmail } = get();
+            if (!resetEmail) {
+              throw new Error("No email set for OTP verification");
+            }
 
-          const { otp } = get();
-          if (!otp) {
-            console.log("⚠️ No OTP set (demo mode) → accepting any input");
-            return;
-          }
+            console.log("🧩 Verifying OTP...");
 
-          if (code === otp) {
+            await authService.verifyOtp({
+              email: resetEmail,
+              otp,
+            });
+
             console.log("✅ OTP verified successfully");
-            return;
+          } catch (error) {
+            console.error("❌ OTP verification failed:", error);
+            throw error;
           }
+        },
 
-          throw new Error("❌ Invalid OTP");
+        /* -------------------------
+         * VERIFY OTP
+         * ------------------------ */
+        verifyResetOtp: async (otp) => {
+          try {
+            const { resetEmail } = get();
+            if (!resetEmail) {
+              throw new Error("No email set for OTP verification");
+            }
+
+            console.log("🧩 Verifying OTP...");
+
+            await authService.verifyResetOtp({
+              email: resetEmail,
+              otp,
+            });
+
+            console.log("✅ OTP verified successfully");
+          } catch (error) {
+            console.error("❌ OTP verification failed:", error);
+            throw error;
+          }
         },
 
         /* -------------------------
          * RESET PASSWORD
          * ------------------------ */
         resetPassword: async (password) => {
-          console.log("🔑 Resetting password:", password);
-          await new Promise((res) => setTimeout(res, 1000));
-          console.log("✅ Password reset complete");
+          try {
+            const { resetEmail } = get();
+            if (!resetEmail) {
+              throw new Error("No email set for password reset");
+            }
+
+            console.log("🔑 Resetting password...");
+
+            await authService.resetPassword({
+              email: resetEmail,
+              password,
+            });
+
+            console.log("✅ Password reset complete");
+          } catch (error) {
+            console.error("❌ Password reset failed:", error);
+            throw error;
+          }
         },
 
         /* -------------------------
          * UPDATE PROFILE
          * ------------------------ */
         updateProfile: async (name, avatar) => {
-          console.log("👤 Updating profile:", name);
-          await new Promise((res) => setTimeout(res, 1000));
+          try {
+            console.log("👤 Updating profile:", name);
 
-          const prevUser = get().user;
+            const updatedUser = await authService.updateProfile({
+              name,
+              avatar,
+            });
 
-          // ✅ ensure email always exists
-          const updatedUser: User = {
-            email: prevUser?.email ?? "",
-            name,
-            avatar,
-          };
+            set({
+              user: updatedUser,
+              isAuthenticated: true,
+            });
 
-          set({
-            user: updatedUser,
-            isAuthenticated: true,
-          });
-
-          console.log("✅ Profile updated", updatedUser);
+            console.log("✅ Profile updated", updatedUser);
+          } catch (error) {
+            console.error("❌ Profile update failed:", error);
+            throw error;
+          }
         },
 
         /* -------------------------
          * LOGOUT
          * ------------------------ */
-        logout: () => {
-          set({
-            user: null,
-            isAuthenticated: false,
-            otp: null,
-          });
-          console.log("🚪 Logged out");
+        logout: async () => {
+          try {
+            console.log("🚪 Logging out...");
+
+            const device = getDeviceInfo();
+            // Call logout API
+            await authService.logout({ device });
+
+            // Clear tokens
+            clearAuthTokens();
+            clearDeviceInfo();
+            // Clear state
+            set({
+              user: null,
+              isAuthenticated: false,
+              resetEmail: null,
+            });
+
+            console.log("✅ Logged out successfully");
+          } catch (error) {
+            console.error("❌ Logout failed:", error);
+            // Still clear local state even if API call fails
+            clearAuthTokens();
+            set({
+              user: null,
+              isAuthenticated: false,
+              resetEmail: null,
+            });
+          }
         },
       }),
       {

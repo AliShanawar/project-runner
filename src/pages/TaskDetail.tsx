@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,14 +12,31 @@ import {
   MessageCircle,
   MessageSquareWarning,
   Users,
+  Loader2,
+  ArrowRight,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthStore } from "@/store/authStore";
+import { useTaskStore } from "@/store/task.store";
+import { toast } from "sonner";
 
 const TaskDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { selectedTask: task, isLoading, getTaskById, clearSelectedTask } = useTaskStore();
+
+  useEffect(() => {
+    if (id) {
+      getTaskById(id).catch(() => {
+        toast.error("Failed to fetch task details");
+      });
+    }
+
+    return () => {
+      clearSelectedTask();
+    };
+  }, [id, getTaskById, clearSelectedTask]);
 
   const navItems = [
     { label: "Task Detail", path: `/dashboard/tasks/${id}`, icon: ClipboardList },
@@ -30,15 +48,26 @@ const TaskDetail = () => {
     { label: "Work Pack", path: "/dashboard/tasks", icon: Briefcase },
   ];
 
-  const taskStatus =
-    id === "3" ? "Cancelled" : id === "2" ? "Completed" : "Pending";
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case "completed":
+        return "text-emerald-500";
+      case "started":
+      case "material_picked":
+        return "text-blue-500";
+      case "pending":
+        return "text-[#8A5BD5]";
+      case "cancelled":
+        return "text-red-500";
+      default:
+        return "text-gray-500";
+    }
+  };
 
-  const statusColor =
-    taskStatus === "Cancelled"
-      ? "text-red-500"
-      : taskStatus === "Completed"
-      ? "text-emerald-500"
-      : "text-[#8A5BD5]";
+  const getStatusLabel = (status?: string) => {
+    if (!status) return "Unknown";
+    return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ");
+  };
 
   return (
     <div className="flex h-full bg-background">
@@ -111,141 +140,172 @@ const TaskDetail = () => {
         </header>
 
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">
-                Task Detail
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                Maecenas bibendum laoreet massa quis viverra.
-              </p>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin text-[#8A5BD5]" />
             </div>
-
-            <div className="bg-white border border-border rounded-2xl shadow-sm p-6 space-y-8">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    Staff Involve in Task
-                  </h3>
-                  <div className="flex items-center gap-10 mt-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src="https://i.pravatar.cc/40?img=5"
-                        alt="Assigned By"
-                        className="h-9 w-9 rounded-full"
-                      />
-                      <div>
-                        <p className="font-medium text-gray-800">
-                          Alex Johnson
-                        </p>
-                        <p className="text-xs text-gray-500">Assigned By</p>
-                      </div>
-                    </div>
-                    <span className="text-gray-400">→</span>
-                    <div className="flex items-center gap-3">
-                      <img
-                        src="https://i.pravatar.cc/40?img=6"
-                        alt="Assigned To"
-                        className="h-9 w-9 rounded-full"
-                      />
-                      <div>
-                        <p className="font-medium text-gray-800">
-                          Alex Johnson
-                        </p>
-                        <p className="text-xs text-gray-500">Assigned To</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <p className={`text-sm font-medium ${statusColor}`}>
-                  Status: {taskStatus}
+          ) : !task ? (
+            <div className="text-center py-8 text-gray-500">
+              Task not found
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-semibold text-foreground">
+                  Task Detail
+                </h1>
+                <p className="text-muted-foreground text-sm">
+                  {task.description || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas bibendum laoreet massa quis viverra."}
                 </p>
               </div>
 
-              <div className="flex items-center gap-6 text-sm text-gray-700">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#8A5BD5]" />
-                  <span>12 Dec</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#8A5BD5]" />
-                  <span>02:30 PM</span>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900">Item to Deliver</h3>
-                <div className="flex flex-wrap gap-4">
-                  <div className="border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 bg-gray-50">
-                    <img src="/icons/steel.png" alt="Steel" className="h-6 w-6" />
-                    <div>
-                      <p className="font-medium text-gray-800">Steel Rods</p>
-                      <p className="text-xs text-gray-500">10 Tons</p>
+              <div className="bg-white border border-border rounded-2xl shadow-sm p-6 space-y-8">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      Staff Involve in Task
+                    </h3>
+                    <div className="flex items-center gap-10 mt-4">
+                      <div className="flex items-center gap-3">
+                        {task.assignedBy?.profilePicture ? (
+                          <img
+                            src={task.assignedBy.profilePicture}
+                            alt="Assigned By"
+                            className="h-9 w-9 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-xs text-gray-600">
+                              {task.assignedBy?.name?.charAt(0) || "?"}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-800">
+                            {task.assignedBy?.name || "Unknown"}
+                          </p>
+                          <p className="text-xs text-gray-500">Assigned By</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="text-gray-400" size={20} />
+                      <div className="flex items-center gap-3">
+                        {task.assignedTo?.profilePicture ? (
+                          <img
+                            src={task.assignedTo.profilePicture}
+                            alt="Assigned To"
+                            className="h-9 w-9 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-xs text-gray-600">
+                              {task.assignedTo?.name?.charAt(0) || "?"}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-800">
+                            {task.assignedTo?.name || "Unknown"}
+                          </p>
+                          <p className="text-xs text-gray-500">Assigned To</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 bg-gray-50">
-                    <img
-                      src="/icons/bricks.png"
-                      alt="Bricks"
-                      className="h-6 w-6"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-800">Bricks</p>
-                      <p className="text-xs text-gray-500">10,000 Units</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900">Note</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  Pellentesque at eros nisi. Phasellus rutrum eu diam in
-                  tincidunt.
-                </p>
-              </div>
-
-              {taskStatus === "Cancelled" && (
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-gray-900">
-                    Reason of Cancellation
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    Maecenas iaculis elementum lacinia.
+                  <p className={`text-sm font-medium ${getStatusColor(task.status)}`}>
+                    Status: {getStatusLabel(task.status)}
                   </p>
                 </div>
-              )}
 
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900">Note Images</h3>
-                <div className="flex gap-3">
-                  <img
-                    src="https://images.unsplash.com/photo-1503387762-592deb58ef4e"
-                    alt="note1"
-                    className="h-24 w-36 rounded-lg object-cover"
-                  />
-                  <img
-                    src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29"
-                    alt="note2"
-                    className="h-24 w-36 rounded-lg object-cover"
-                  />
+                <div className="flex items-center gap-6 text-sm text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#8A5BD5]" />
+                    <span>{task.date || "N/A"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#8A5BD5]" />
+                    <span>{task.time || "N/A"}</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900">Site Map</h3>
-                <img
-                  src="https://images.unsplash.com/photo-1581092334505-c326d7e6b46b"
-                  alt="Site Map"
-                  className="w-full max-w-2xl rounded-xl object-cover"
-                />
+                {task.itemsToDeliver && task.itemsToDeliver.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900">Item to Deliver</h3>
+                    <div className="flex flex-wrap gap-4">
+                      {task.itemsToDeliver.map((item, index) => (
+                        <div
+                          key={index}
+                          className="border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 bg-gray-50"
+                        >
+                          {item.icon ? (
+                            <img src={item.icon} alt={item.name} className="h-6 w-6" />
+                          ) : (
+                            <div className="h-6 w-6 bg-gray-300 rounded" />
+                          )}
+                          <div>
+                            <p className="font-medium text-gray-800">{item.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.quantity} {item.unit}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {task.note && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900">Note</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {task.note}
+                    </p>
+                  </div>
+                )}
+
+                {task.status === "cancelled" && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900">
+                      Reason of Cancellation
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {task.note || "No reason provided"}
+                    </p>
+                  </div>
+                )}
+
+                {task.images && task.images.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900">Note Images</h3>
+                    <div className="flex gap-3">
+                      {task.images.map((image, index) => (
+                        <img
+                          key={index}
+                          src={image}
+                          alt={`note${index + 1}`}
+                          className="h-24 w-36 rounded-lg object-cover"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(task.materialLocation || task.geooffication) && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900">Site Map</h3>
+                    <div className="bg-gray-100 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-2">
+                        {task.materialLocation?.address || task.geooffication?.address || "Location not available"}
+                      </p>
+                      <div className="h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-400 text-sm">Map placeholder</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

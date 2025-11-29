@@ -1,8 +1,8 @@
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import SignIn from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ConfirmEmail from "./pages/ConfirmEmail";
 import CreatePassword from "./pages/CreatePassword";
@@ -26,11 +26,26 @@ import SiteFeedback from "./pages/SiteFeedback";
 import SiteComplaint from "./pages/SiteComplaint";
 import ComplaintDetail from "./pages/ComplaintDetail";
 import SiteWorkPack from "./pages/SiteWorkPack";
+import { SignIn } from "./pages/Login";
+import FeedbackDetail from "./pages/FeedbackDetail";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ReactQueryDevtools initialIsOpen={false} />
     <TooltipProvider>
       <Sonner />
       <BrowserRouter>
@@ -59,6 +74,7 @@ const App = () => (
               />
               <Route path="chat" element={<SiteChat />} />
               <Route path="feedback" element={<SiteFeedback />} />
+              <Route path="feedback/:id" element={<FeedbackDetail />} />
               <Route path="complain" element={<SiteComplaint />} />
               <Route path="complain/:id" element={<ComplaintDetail />} />
               <Route path="work-pack" element={<SiteWorkPack />} />
