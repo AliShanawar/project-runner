@@ -1,6 +1,11 @@
 import type { PaginationInfo } from "./site";
 
-export type ComplaintStatus = "pending" | "in-progress" | "resolved" | "closed" | string;
+export type ComplaintStatus =
+  | "pending"
+  | "in-progress"
+  | "resolved"
+  | "closed"
+  | string;
 export type ComplaintCategory =
   | "construction"
   | "safety"
@@ -50,10 +55,8 @@ export interface GetComplaintsParams {
 }
 
 export interface ApiComplaintListResponse {
-  complaints: Complaint[];
+  complains: Complaint[];
   pagination: PaginationInfo;
 }
 
-export interface ApiComplaintResponse {
-  complaint: Complaint;
-}
+export type ApiComplaintResponse = Complaint;

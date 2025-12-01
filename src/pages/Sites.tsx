@@ -51,11 +51,10 @@ const Sites = () => {
     error,
     total,
     page: currentPage,
-    limit: currentLimit,
     getAllSites,
     createSite,
     updateSite,
-    deleteSite
+    deleteSite,
   } = useSiteStore();
 
   // Local state
@@ -76,7 +75,6 @@ const Sites = () => {
       toast.error("Failed to fetch sites");
       console.error(err);
     });
-
   }, [currentPage, pageSize, getAllSites]);
 
   // Handle site creation
@@ -143,10 +141,12 @@ const Sites = () => {
   // Fetch sites when search query changes (with debounce effect)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      getAllSites({ page: 1, limit: pageSize, search: searchQuery }).catch((err) => {
-        toast.error("Failed to fetch sites");
-        console.error(err);
-      });
+      getAllSites({ page: 1, limit: pageSize, search: searchQuery }).catch(
+        (err) => {
+          toast.error("Failed to fetch sites");
+          console.error(err);
+        }
+      );
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
@@ -164,10 +164,12 @@ const Sites = () => {
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
-    getAllSites({ page: 1, limit: newSize, search: searchQuery }).catch((err) => {
-      toast.error("Failed to fetch sites");
-      console.error(err);
-    });
+    getAllSites({ page: 1, limit: newSize, search: searchQuery }).catch(
+      (err) => {
+        toast.error("Failed to fetch sites");
+        console.error(err);
+      }
+    );
   };
 
   // Generate page numbers for pagination
@@ -285,16 +287,16 @@ const Sites = () => {
               ) : error ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-32 text-center">
-                    <div className="text-red-500">
-                      Error: {error}
-                    </div>
+                    <div className="text-red-500">Error: {error}</div>
                   </TableCell>
                 </TableRow>
               ) : sites?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-32 text-center">
                     <div className="text-gray-500">
-                      {searchQuery ? "No sites found matching your search" : "No sites yet. Create your first site!"}
+                      {searchQuery
+                        ? "No sites found matching your search"
+                        : "No sites yet. Create your first site!"}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -311,25 +313,34 @@ const Sites = () => {
                       {site.location.address}
                     </TableCell>
                     <TableCell className="text-gray-700">
-                      {site.employeeCounts?.subscontructor ?? site.employeeCounts?.subConstructor ?? 0}
+                      {site.employeeCounts?.subscontructor ??
+                        site.employeeCounts?.subConstructor ??
+                        0}
                     </TableCell>
                     <TableCell className="text-gray-700">
                       {site.employeeCounts?.forklift ?? 0}
                     </TableCell>
                     <TableCell className="py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                        site.status === 'active'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {site.status ? site.status.charAt(0).toUpperCase() + site.status.slice(1) : 'Unknown'}
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                          site.status === "active"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {site.status
+                          ? site.status.charAt(0).toUpperCase() +
+                            site.status.slice(1)
+                          : "Unknown"}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-4 text-sm font-medium">
                         <button
                           className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors"
-                          onClick={() => navigate(`/dashboard/sites/${site._id}`)}
+                          onClick={() =>
+                            navigate(`/dashboard/sites/${site._id}`)
+                          }
                         >
                           View
                         </button>
@@ -388,7 +399,8 @@ const Sites = () => {
                 </SelectContent>
               </Select>
               <span className="text-sm text-gray-600">
-                {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, total)} of {total}
+                {(currentPage - 1) * pageSize + 1}-
+                {Math.min(currentPage * pageSize, total)} of {total}
               </span>
             </div>
 
@@ -425,7 +437,8 @@ const Sites = () => {
                         isActive={currentPage === page}
                         className={cn(
                           "cursor-pointer rounded-full border border-gray-200 bg-white text-gray-700 shadow-none hover:border-[#8A5BD5]/60 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5]",
-                          currentPage === page && "border-transparent bg-[#8A5BD5] text-white hover:bg-[#7A4EC3]"
+                          currentPage === page &&
+                            "border-transparent bg-[#8A5BD5] text-white hover:bg-[#7A4EC3]"
                         )}
                       >
                         {page}
@@ -439,7 +452,8 @@ const Sites = () => {
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                      if (currentPage < totalPages)
+                        handlePageChange(currentPage + 1);
                     }}
                     className={cn(
                       "rounded-full border border-gray-200 bg-white text-gray-700 shadow-none hover:border-[#8A5BD5]/60 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5]",
@@ -536,14 +550,18 @@ const Sites = () => {
                 <Input
                   placeholder="Enter site name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   className="rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
                 />
 
                 <Input
                   placeholder="Enter site address (optional)"
                   value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
                   className="rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
                 />
 
@@ -577,7 +595,12 @@ const Sites = () => {
                 className="rounded-lg sm:w-32"
                 onClick={() => {
                   setActiveModal(null);
-                  setFormData({ name: "", address: "", latitude: 0, longitude: 0 });
+                  setFormData({
+                    name: "",
+                    address: "",
+                    latitude: 0,
+                    longitude: 0,
+                  });
                 }}
               >
                 Cancel
@@ -626,13 +649,17 @@ const Sites = () => {
 
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Enter site name"
                 className="rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
               />
               <Input
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
                 placeholder="Enter site address (optional)"
                 className="rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
               />
@@ -643,7 +670,12 @@ const Sites = () => {
                 className="rounded-lg sm:w-32"
                 onClick={() => {
                   setActiveModal(null);
-                  setFormData({ name: "", address: "", latitude: 0, longitude: 0 });
+                  setFormData({
+                    name: "",
+                    address: "",
+                    latitude: 0,
+                    longitude: 0,
+                  });
                 }}
               >
                 Cancel

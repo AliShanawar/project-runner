@@ -18,7 +18,7 @@ interface FeedbackState extends ApiFeedbackListResponse {
 
 export const useFeedbackStore = create<FeedbackState>()(
   devtools((set) => ({
-    feedbacks: [],
+    feedback: [],
     pagination: {
       currentPage: 1,
       totalItems: 0,
@@ -44,7 +44,7 @@ export const useFeedbackStore = create<FeedbackState>()(
           Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
         set({
-          feedbacks: response.feedback || [],
+          feedback: response.feedback || [],
           pagination: {
             currentPage,
             itemsPerPage,
@@ -67,7 +67,7 @@ export const useFeedbackStore = create<FeedbackState>()(
         set({ isLoading: true, error: null });
         const response = await feedbackService.getFeedbackById(id);
         set({ currentFeedback: response, isLoading: false });
-        return response.feedback;
+        return response;
       } catch (error: any) {
         set({
           isLoading: false,

@@ -27,7 +27,7 @@ interface SiteState {
 }
 
 export const useSiteStore = create<SiteState>()(
-  devtools((set, get) => ({
+  devtools((set) => ({
     sites: [],
     currentSite: null,
     isLoading: false,
@@ -43,13 +43,13 @@ export const useSiteStore = create<SiteState>()(
       try {
         set({ isLoading: true, error: null });
         const newSite = await siteService.createSite(data);
-        
+
         // Add new site to the list
         set((state) => ({
           sites: [newSite, ...state.sites],
           isLoading: false,
         }));
-        
+
         return newSite;
       } catch (error: any) {
         set({ isLoading: false, error: error.message });
@@ -64,7 +64,7 @@ export const useSiteStore = create<SiteState>()(
       try {
         set({ isLoading: true, error: null });
         const response = await siteService.getAllSites(params);
-        
+
         set({
           sites: response.sites,
           total: response.pagination?.totalItems,
@@ -106,7 +106,8 @@ export const useSiteStore = create<SiteState>()(
           sites: state.sites.map((site) =>
             site._id === id ? updatedSite : site
           ),
-          currentSite: state.currentSite?._id === id ? updatedSite : state.currentSite,
+          currentSite:
+            state.currentSite?._id === id ? updatedSite : state.currentSite,
           isLoading: false,
         }));
 

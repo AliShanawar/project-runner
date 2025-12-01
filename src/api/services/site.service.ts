@@ -5,7 +5,6 @@ import type {
   CreateSiteRequest,
   UpdateSiteRequest,
   GetSitesParams,
-  GetSitesResponse,
   ApiSitesResponse,
 } from "@/types";
 

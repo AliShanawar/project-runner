@@ -70,8 +70,7 @@ export interface ApiSitesResponse {
   message: string;
   status: number;
   timestamp: string;
-  data: {
-    sites: Site[];
-    pagination: PaginationInfo;
-  };
+
+  sites: Site[];
+  pagination: PaginationInfo;
 }

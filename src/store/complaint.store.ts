@@ -34,7 +34,7 @@ export const useComplaintStore = create<ComplaintState>()(
         set({ isLoading: true, error: null });
         const response = await complaintService.getAllComplaints(params);
         const totalItems =
-          response?.pagination?.totalItems ?? response.complaints?.length ?? 0;
+          response?.pagination?.totalItems ?? response.complains?.length ?? 0;
         const itemsPerPage =
           response?.pagination?.itemsPerPage ?? params?.limit ?? 10;
         const currentPage =
@@ -44,7 +44,7 @@ export const useComplaintStore = create<ComplaintState>()(
           Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
         set({
-          complaints: response.complains || [],
+          complains: response.complains || [],
           pagination: {
             currentPage,
             itemsPerPage,
@@ -68,7 +68,7 @@ export const useComplaintStore = create<ComplaintState>()(
         const response = await complaintService.getComplaintById(id);
         console.log("response  data ", response);
         set({ currentComplaint: response, isLoading: false });
-        return response.complaint;
+        return response;
       } catch (error: any) {
         set({
           isLoading: false,

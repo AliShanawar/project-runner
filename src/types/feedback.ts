@@ -40,6 +40,4 @@ export interface ApiFeedbackListResponse {
   pagination: PaginationInfo;
 }
 
-export interface ApiFeedbackResponse {
-  feedback: Feedback;
-}
+export type ApiFeedbackResponse = Feedback;

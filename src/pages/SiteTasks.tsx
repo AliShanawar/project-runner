@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Search, Loader2 } from "lucide-react";
 import { TaskDataTable } from "@/components/TaskDataTable";
-import { taskColumns, type Task } from "@/components/TaskColumns";
+import { taskColumns, type Task as TaskColumnType } from "@/components/TaskColumns";
 import {
   Select,
   SelectContent,
@@ -13,13 +13,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { useTaskStore } from "@/store/task.store";
 import { toast } from "sonner";
+import type { Task as ApiTask } from "@/types";
 
 const SiteTasks = () => {
   const { siteId } = useParams<{ siteId: string }>();
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
 
   const { tasks, isLoading, pagination, getTasksBySite } = useTaskStore();
 
@@ -46,14 +47,34 @@ const SiteTasks = () => {
     setPage(1);
   }, [statusFilter]);
 
+  // Transform API tasks to match TaskColumns format
+  const transformedTasks = useMemo(() => {
+    return tasks.map((task: ApiTask): TaskColumnType => {
+      const firstItem = task.itemsToDeliver?.[0];
+      return {
+        id: parseInt(task._id) || 0,
+        assignedTo: {
+          name: task.assignedTo?.name || "Unassigned",
+          avatar: task.assignedTo?.profilePicture,
+        },
+        assignedBy: task.assignedBy?.name || "Unknown",
+        material: {
+          type: firstItem?.name || "N/A",
+          quantity: firstItem ? `${firstItem.quantity} ${firstItem.unit}` : "0",
+          icon: firstItem?.icon,
+        },
+        status: task.status === "completed" ? "Completed" : task.status === "cancelled" ? "Cancelled" : "Pending",
+      };
+    });
+  }, [tasks]);
+
   // Filter tasks by search query (client-side for now)
-  const filteredTasks = tasks.filter((task) => {
+  const filteredTasks = transformedTasks.filter((task) => {
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
     return (
       task.assignedTo?.name?.toLowerCase().includes(searchLower) ||
-      task.assignedBy?.name?.toLowerCase().includes(searchLower) ||
-      task.title?.toLowerCase().includes(searchLower)
+      task.assignedBy?.toLowerCase().includes(searchLower)
     );
   });
 
