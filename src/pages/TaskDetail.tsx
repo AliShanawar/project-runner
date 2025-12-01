@@ -128,7 +128,7 @@ const TaskDetail = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
+            <button className="relative p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer">
               <Bell size={20} className="text-foreground" />
             </button>
             <Avatar>

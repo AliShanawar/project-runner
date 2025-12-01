@@ -16,19 +16,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
 import { Search, Loader2 } from "lucide-react";
 import { useUserStore } from "@/store/user.store";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { PaginationControls } from "@/components/PaginationControls";
 
 export default function Requests() {
   const [filter, setFilter] = useState("all");
@@ -84,39 +75,6 @@ export default function Requests() {
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
     setPage(1);
-  };
-
-  // Generate page numbers for pagination
-  const getPageNumbers = () => {
-    if (!pagination) return [];
-    
-    const { totalPages, currentPage } = pagination;
-    const pages: (number | string)[] = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("ellipsis");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("ellipsis");
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
   };
 
   return (
@@ -218,19 +176,19 @@ export default function Requests() {
                             onClick={() =>
                               navigate(`/dashboard/requests/${req._id}`)
                             }
-                            className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors"
+                            className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors cursor-pointer"
                           >
                             View
                           </button>
                           <button 
                             onClick={() => handleAction(req._id, "approved")}
-                            className="text-green-600 hover:text-green-700 transition-colors"
+                            className="text-green-600 hover:text-green-700 transition-colors cursor-pointer"
                           >
                             Accept
                           </button>
                           <button 
                             onClick={() => handleAction(req._id, "rejected")}
-                            className="text-red-500 hover:text-red-600 transition-colors"
+                            className="text-red-500 hover:text-red-600 transition-colors cursor-pointer"
                           >
                             Reject
                           </button>
@@ -246,90 +204,16 @@ export default function Requests() {
 
         {/* Pagination Controls */}
         {!loading && pagination && pagination.totalRecords > 0 && (
-          <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Page size selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Rows per page:</span>
-              <Select
-                value={pageSize.toString()}
-                onValueChange={(value) => handlePageSizeChange(Number(value))}
-              >
-                <SelectTrigger className="w-[70px] h-8 rounded-lg">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-              <span className="text-sm text-gray-600">
-                {((pagination.currentPage - 1) * pagination.recordsPerPage) + 1}-{Math.min(pagination.currentPage * pagination.recordsPerPage, pagination.totalRecords)} of {pagination.totalRecords}
-              </span>
-            </div>
-
-            {/* Pagination */}
-            <Pagination className="!w-auto sm:ml-auto sm:mr-0 sm:justify-end">
-              <PaginationContent className="gap-2 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 shadow-sm">
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (pagination.currentPage > 1) handlePageChange(pagination.currentPage - 1);
-                    }}
-                    className={cn(
-                      "rounded-full border border-gray-200 bg-white text-gray-700 shadow-none hover:border-[#8A5BD5]/60 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5]",
-                      pagination.currentPage === 1
-                        ? "pointer-events-none opacity-40"
-                        : "cursor-pointer"
-                    )}
-                  />
-                </PaginationItem>
-
-                {getPageNumbers().map((pageNum, index) => (
-                  <PaginationItem key={index}>
-                    {pageNum === "ellipsis" ? (
-                      <PaginationEllipsis className="text-gray-400" />
-                    ) : (
-                      <PaginationLink
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handlePageChange(pageNum as number);
-                        }}
-                        isActive={pagination.currentPage === pageNum}
-                        className={cn(
-                          "cursor-pointer rounded-full border border-gray-200 bg-white text-gray-700 shadow-none hover:border-[#8A5BD5]/60 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5]",
-                          pagination.currentPage === pageNum && "border-transparent bg-[#8A5BD5] text-white hover:bg-[#7A4EC3]"
-                        )}
-                      >
-                        {pageNum}
-                      </PaginationLink>
-                    )}
-                  </PaginationItem>
-                ))}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (pagination.currentPage < pagination.totalPages) handlePageChange(pagination.currentPage + 1);
-                    }}
-                    className={cn(
-                      "rounded-full border border-gray-200 bg-white text-gray-700 shadow-none hover:border-[#8A5BD5]/60 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5]",
-                      pagination.currentPage >= pagination.totalPages
-                        ? "pointer-events-none opacity-40"
-                        : "cursor-pointer"
-                    )}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+          <PaginationControls
+            currentPage={pagination.currentPage || page}
+            totalPages={pagination.totalPages || 1}
+            onPageChange={handlePageChange}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            totalItems={pagination.totalRecords}
+            className="px-6 py-4 border-t border-gray-100"
+            label="Rows"
+          />
         )}
       </div>
     </div>

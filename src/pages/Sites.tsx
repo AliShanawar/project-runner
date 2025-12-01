@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,15 +21,7 @@ import { Check, Search, UploadCloud, Loader2 } from "lucide-react";
 import { useSiteStore } from "@/store/site.store";
 import { toast } from "sonner";
 import type { Site } from "@/types";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
+import { PaginationControls } from "@/components/PaginationControls";
 
 type ModalType =
   | null
@@ -172,36 +163,6 @@ const Sites = () => {
     );
   };
 
-  // Generate page numbers for pagination
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("ellipsis");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("ellipsis");
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  };
-
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -337,7 +298,7 @@ const Sites = () => {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-4 text-sm font-medium">
                         <button
-                          className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors"
+                          className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors cursor-pointer"
                           onClick={() =>
                             navigate(`/dashboard/sites/${site._id}`)
                           }
@@ -345,7 +306,7 @@ const Sites = () => {
                           View
                         </button>
                         <button
-                          className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors"
+                          className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors cursor-pointer"
                           onClick={() => {
                             setSelectedSite(site);
                             setFormData({
@@ -360,7 +321,7 @@ const Sites = () => {
                           Edit
                         </button>
                         <button
-                          className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors"
+                          className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors cursor-pointer"
                           onClick={() => {
                             setSelectedSite(site);
                             setActiveModal("deleteConfirm");
@@ -379,93 +340,16 @@ const Sites = () => {
 
         {/* Pagination Controls */}
         {!isLoading && sites?.length > 0 && (
-          <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Page size selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Rows per page:</span>
-              <Select
-                value={pageSize.toString()}
-                onValueChange={(value) => handlePageSizeChange(Number(value))}
-              >
-                <SelectTrigger className="w-[70px] h-8 rounded-lg">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-              <span className="text-sm text-gray-600">
-                {(currentPage - 1) * pageSize + 1}-
-                {Math.min(currentPage * pageSize, total)} of {total}
-              </span>
-            </div>
-
-            {/* Pagination */}
-            <Pagination className="!w-auto sm:ml-auto sm:mr-0 sm:justify-end">
-              <PaginationContent className="gap-2 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 shadow-sm">
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage > 1) handlePageChange(currentPage - 1);
-                    }}
-                    className={cn(
-                      "rounded-full border border-gray-200 bg-white text-gray-700 shadow-none hover:border-[#8A5BD5]/60 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5]",
-                      currentPage === 1
-                        ? "pointer-events-none opacity-40"
-                        : "cursor-pointer"
-                    )}
-                  />
-                </PaginationItem>
-
-                {getPageNumbers().map((page, index) => (
-                  <PaginationItem key={index}>
-                    {page === "ellipsis" ? (
-                      <PaginationEllipsis className="text-gray-400" />
-                    ) : (
-                      <PaginationLink
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handlePageChange(page as number);
-                        }}
-                        isActive={currentPage === page}
-                        className={cn(
-                          "cursor-pointer rounded-full border border-gray-200 bg-white text-gray-700 shadow-none hover:border-[#8A5BD5]/60 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5]",
-                          currentPage === page &&
-                            "border-transparent bg-[#8A5BD5] text-white hover:bg-[#7A4EC3]"
-                        )}
-                      >
-                        {page}
-                      </PaginationLink>
-                    )}
-                  </PaginationItem>
-                ))}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage < totalPages)
-                        handlePageChange(currentPage + 1);
-                    }}
-                    className={cn(
-                      "rounded-full border border-gray-200 bg-white text-gray-700 shadow-none hover:border-[#8A5BD5]/60 hover:bg-[#8A5BD5]/10 hover:text-[#8A5BD5]",
-                      currentPage >= totalPages
-                        ? "pointer-events-none opacity-40"
-                        : "cursor-pointer"
-                    )}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            totalItems={total}
+            className="px-6 py-4 border-t border-gray-100"
+            label="Rows"
+          />
         )}
       </div>
       {renderModal()}

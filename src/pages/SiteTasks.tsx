@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { PaginationControls } from "@/components/PaginationControls";
 import { useTaskStore } from "@/store/task.store";
 import { toast } from "sonner";
 import type { Task as ApiTask } from "@/types";
@@ -126,32 +127,18 @@ const SiteTasks = () => {
             {/* Data Table */}
             <TaskDataTable columns={taskColumns} data={filteredTasks} />
 
-            {/* Pagination Info */}
-            {pagination && pagination.totalRecords > 0 && (
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <div>
+            {/* Pagination */}
+            {pagination && pagination.totalRecords > 0 && pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
                   Showing {((pagination.currentPage - 1) * pagination.recordsPerPage) + 1}-
                   {Math.min(pagination.currentPage * pagination.recordsPerPage, pagination.totalRecords)} of {pagination.totalRecords} tasks
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setPage(page - 1)}
-                    disabled={page === 1}
-                    className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <span>
-                    Page {pagination.currentPage} of {pagination.totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage(page + 1)}
-                    disabled={page >= pagination.totalPages}
-                    className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={pagination.totalPages}
+                  onPageChange={setPage}
+                />
               </div>
             )}
           </>

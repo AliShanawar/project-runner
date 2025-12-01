@@ -44,6 +44,7 @@ export const API_ENDPOINTS = {
     GET_BY_ID: (id: string) => `/site/${id}`,
     UPDATE: (id: string) => `/site/${id}`,
     DELETE: (id: string) => `/site/${id}`,
+    GET_EMPLOYEES: (id: string) => `/site/${id}/employees`,
   },
   FEEDBACK: {
     ADMIN_ALL: "/feedback/admin/all",
@@ -56,6 +57,13 @@ export const API_ENDPOINTS = {
   TASK: {
     GET_BY_SITE: (siteId: string) => `/tasks/site/${siteId}`,
     GET_BY_ID: (taskId: string) => `/tasks/${taskId}`,
+  },
+  INVENTORY: {
+    GET_ALL: "/inventory",
+    GET_BY_ID: (id: string) => `/inventory/${id}`,
+    CREATE: "/inventory",
+    UPDATE: (id: string) => `/inventory/${id}`,
+    DELETE: (id: string) => `/inventory/${id}`,
   },
 } as const;
 

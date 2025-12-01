@@ -40,7 +40,6 @@ export function AppSidebar() {
         isIconOnly ? "w-[84px]" : "w-[260px]"
       )}
     >
-
       {/* Logo */}
       <div
         className={cn(
@@ -55,7 +54,7 @@ export function AppSidebar() {
       <SidebarContent className={cn("py-6", isIconOnly ? "px-2" : "px-3")}>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
+            <SidebarMenu className="space-y-4">
               {activeMenu.map((item) => {
                 const isActive = isActiveMenu(item.url);
                 return (

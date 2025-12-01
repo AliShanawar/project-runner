@@ -4,6 +4,7 @@ import { authService } from "@/api/services/auth.service";
 import { setAuthToken, setRefreshToken, clearAuthTokens } from "@/api/client";
 import { clearDeviceInfo, getDeviceInfo } from "@/lib/deviceId";
 import type { User } from "@/types";
+import { toast } from "sonner";
 
 /* ----------------------------- Types ----------------------------- */
 
@@ -69,8 +70,13 @@ export const useAuthStore = create<AuthState>()(
             console.log("✅ Login successful", response.user);
           } catch (error) {
             console.error("❌ Login failed:", error);
+            const message =
+              (error as any)?.response?.data?.message ||
+              (error as Error)?.message ||
+              "Incorrect email or password";
+            toast.error(message);
             set({ isLoading: false });
-            throw error;
+            throw new Error(message);
           }
         },
 

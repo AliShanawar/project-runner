@@ -1,3 +1,6 @@
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import { AlertCircle, Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,20 +17,55 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search } from "lucide-react";
-
-const members = Array.from({ length: 10 }).map((_, i) => ({
-  id: i + 1,
-  name: ["Lily Thompson", "Ethan Carter", "Isabella Kim", "Liam Johnson"][
-    i % 4
-  ],
-  email: `example${i + 1}@mail.com`,
-  type: i % 3 === 0 ? "Subcontractor" : "Driver",
-  assignedTasks: i % 3 === 0 ? "-" : 5,
-  avatar: `https://i.pravatar.cc/150?img=${i + 10}`,
-}));
+import { siteService } from "@/api/services/site.service";
+import type { SiteEmployee, EmployeeRole } from "@/types";
+import { toast } from "sonner";
 
 const SiteMembers = () => {
+  const { siteId } = useParams();
+  const [employees, setEmployees] = useState<SiteEmployee[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [role, setRole] = useState<EmployeeRole | "all">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page] = useState(1);
+  const [limit] = useState(10);
+
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((emp) =>
+      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [employees, searchTerm]);
+
+  useEffect(() => {
+    if (!siteId) return;
+
+    const fetchEmployees = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await siteService.getSiteEmployees(siteId, {
+          page,
+          limit,
+          role: role !== "all" ? role : undefined,
+        });
+        setEmployees(response.employees || []);
+      } catch (err: any) {
+        const errorMessage =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to load members";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEmployees();
+  }, [siteId, page, limit, role]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -41,14 +79,15 @@ const SiteMembers = () => {
       {/* Filter + Search */}
       <div className="bg-white border border-gray-100 rounded-2xl shadow-sm">
         <div className="flex flex-wrap items-center gap-4 border-b border-gray-100 px-6 py-4">
-          <Select defaultValue="all">
+          <Select value={role} onValueChange={(value) => setRole(value as EmployeeRole | "all")}>
             <SelectTrigger className="min-w-[140px] rounded-lg">
-              <SelectValue placeholder="All Member" />
+              <SelectValue placeholder="All Members" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Members</SelectItem>
-              <SelectItem value="drivers">Drivers</SelectItem>
-              <SelectItem value="subcontractors">Subcontractors</SelectItem>
+              <SelectItem value="forklift">Forklift</SelectItem>
+              <SelectItem value="builder">Builder</SelectItem>
+              <SelectItem value="subConstructor">Subcontractor</SelectItem>
             </SelectContent>
           </Select>
 
@@ -56,6 +95,8 @@ const SiteMembers = () => {
             <Search className="text-gray-400 absolute left-3 top-1/2 size-4 -translate-y-1/2" />
             <Input
               placeholder="Search members"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
             />
           </div>
@@ -63,46 +104,54 @@ const SiteMembers = () => {
 
         {/* Table */}
         <div className="px-6 py-4">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50 border-b border-gray-100">
-                <TableHead className="text-gray-500 font-medium">
-                  Name
-                </TableHead>
-                <TableHead className="text-gray-500 font-medium">
-                  Email
-                </TableHead>
-                <TableHead className="text-gray-500 font-medium">
-                  Type
-                </TableHead>
-                <TableHead className="text-gray-500 font-medium text-right">
-                  Assigned Tasks
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((m) => (
-                <TableRow
-                  key={m.id}
-                  className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
-                >
-                  <TableCell className="flex items-center py-3">
-                    <img
-                      src={m.avatar}
-                      alt={m.name}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                    {m.name}
-                  </TableCell>
-                  <TableCell>{m.email}</TableCell>
-                  <TableCell>{m.type}</TableCell>
-                  <TableCell className="text-right">
-                    {m.assignedTasks}
-                  </TableCell>
+          {isLoading && employees.length === 0 ? (
+            <div className="flex items-center gap-3 text-gray-600 py-8">
+              <Loader2 className="size-5 animate-spin text-[#8A5BD5]" />
+              Loading members...
+            </div>
+          ) : error ? (
+            <div className="flex items-center gap-3 text-destructive py-8">
+              <AlertCircle className="size-5" />
+              {error}
+            </div>
+          ) : filteredEmployees.length === 0 ? (
+            <div className="text-gray-500 py-8">
+              No members found for this site.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50 border-b border-gray-100">
+                  <TableHead className="text-gray-500 font-medium">
+                    Name
+                  </TableHead>
+                  <TableHead className="text-gray-500 font-medium">
+                    Email
+                  </TableHead>
+                  <TableHead className="text-gray-500 font-medium">
+                    Role
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredEmployees.map((emp) => (
+                  <TableRow
+                    key={emp._id}
+                    className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
+                  >
+                    <TableCell className="flex items-center py-3 gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-sm font-semibold">
+                        {(emp.name || "U").charAt(0).toUpperCase()}
+                      </div>
+                      {emp.name}
+                    </TableCell>
+                    <TableCell>{emp.email}</TableCell>
+                    <TableCell className="capitalize">{emp.role}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
     </div>

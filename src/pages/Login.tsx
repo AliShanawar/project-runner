@@ -18,8 +18,13 @@ export const SignIn = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await login(email, password);
-    navigate("/dashboard/sites");
+    try {
+      await login(email, password);
+      navigate("/dashboard/sites");
+    } catch (err: any) {
+      // Toast is already handled in the auth store; keep this to avoid unhandled rejections
+      console.error(err);
+    }
   };
 
   return (
@@ -91,4 +96,3 @@ export const SignIn = () => {
     </AuthLayout>
   );
 };
-

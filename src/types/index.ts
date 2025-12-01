@@ -9,3 +9,4 @@ export * from "./employee";
 export * from "./chat";
 export * from "./feedback";
 export * from "./complaint";
+export * from "./inventory";

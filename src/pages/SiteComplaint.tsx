@@ -1,24 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertCircle, Loader2 } from "lucide-react";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { PaginationControls } from "@/components/PaginationControls";
 import { useComplaintStore } from "@/store/complaint.store";
-
 import { toast } from "sonner";
 
 const SiteComplaint = () => {
@@ -147,58 +132,17 @@ const SiteComplaint = () => {
         </div>
 
         {/* Pagination */}
-        {complains?.length > 0 && totalPages > 1 && (
-          <div className="pt-2 flex justify-end">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    className={cn(
-                      "cursor-pointer",
-                      page === 1 && "pointer-events-none opacity-50"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handlePageChange(page - 1);
-                    }}
-                  />
-                </PaginationItem>
-
-                {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
-                  (pageNumber) => (
-                    <PaginationItem key={pageNumber}>
-                      <PaginationLink
-                        href="#"
-                        isActive={pageNumber === page}
-                        className="cursor-pointer"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handlePageChange(pageNumber);
-                        }}
-                      >
-                        {pageNumber}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    className={cn(
-                      "cursor-pointer",
-                      page >= totalPages && "pointer-events-none opacity-50"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handlePageChange(page + 1);
-                    }}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+        {complains?.length > 0 && (
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            pageSize={limit}
+            onPageSizeChange={setLimit}
+            pageSizeOptions={[5, 10, 20, 50]}
+            totalItems={pagination?.totalItems}
+            className="border-t border-gray-100 px-6 py-4"
+          />
         )}
       </div>
       {/* Header */}

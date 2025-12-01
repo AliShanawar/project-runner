@@ -6,6 +6,8 @@ import type {
   UpdateSiteRequest,
   GetSitesParams,
   ApiSitesResponse,
+  SiteEmployeesResponse,
+  GetSiteEmployeesParams,
 } from "@/types";
 
 export const siteService = {
@@ -52,5 +54,22 @@ export const siteService = {
    */
   deleteSite: async (id: string) => {
     return api.delete(API_ENDPOINTS.SITE.DELETE(id));
+  },
+
+  /**
+   * Get site employees with pagination and role filtering
+   */
+  getSiteEmployees: async (siteId: string, params?: GetSiteEmployeesParams) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.role) queryParams.append("role", params.role);
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString
+      ? `${API_ENDPOINTS.SITE.GET_EMPLOYEES(siteId)}?${queryString}`
+      : API_ENDPOINTS.SITE.GET_EMPLOYEES(siteId);
+
+    return api.get<SiteEmployeesResponse>(endpoint);
   },
 };

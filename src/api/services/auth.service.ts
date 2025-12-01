@@ -76,5 +76,22 @@ export const authService = {
     return api.put<User>(API_ENDPOINTS.AUTH.UPDATE_PROFILE, data);
   },
 
- 
+  /**
+   * Upload file to get signed URL
+   */
+  uploadFile: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post<{ url: string }>(API_ENDPOINTS.AUTH.UPLOAD, formData);
+  },
+
+  /**
+   * Get signed URL for S3 upload
+   */
+  getSignedUrl: async (fileName: string, fileType: string) => {
+    return api.post<{ url: string; key: string }>(API_ENDPOINTS.S3.SIGNED_URL, {
+      fileName,
+      fileType,
+    });
+  },
 };

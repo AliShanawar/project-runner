@@ -6,10 +6,27 @@ export interface User {
   email: string;
   name: string;
   profilePicture?: string | null;
-  role: "admin" | "employee" | "user";
+  image?: string;
+  role: "admin" | "employee" | "user" | "forklift" | "subConstructor" | "driver";
   verification?: {
     status: "pending" | "approved" | "rejected";
+    verifiedAt?: string;
+    verifiedBy?: {
+      _id: string;
+      name: string;
+      email: string;
+    };
   };
+  siteId?: string | null;
+  isBlocked?: boolean;
+  isSocial?: boolean;
+  verified?: boolean;
+  isLoggedOut?: boolean;
+  isNotification?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+  __v?: number;
   // Add other fields from JSON as needed
 }
 

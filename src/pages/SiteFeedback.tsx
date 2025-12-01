@@ -2,22 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useFeedbackStore } from "@/store/feedback.store";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { PaginationControls } from "@/components/PaginationControls";
 import { toast } from "sonner";
 import type { Feedback } from "@/types";
 
@@ -144,79 +130,18 @@ const SiteFeedback = () => {
         </div>
 
         {/* Pagination */}
-        {feedback.length > 0 && totalPages > 1 && (
-          <div className="pt-2 flex justify-end">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    className={cn(
-                      "cursor-pointer",
-                      page === 1 && "pointer-events-none opacity-50"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handlePageChange(page - 1);
-                    }}
-                  />
-                </PaginationItem>
-
-                {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
-                  (pageNumber) => (
-                    <PaginationItem key={pageNumber}>
-                      <PaginationLink
-                        href="#"
-                        isActive={pageNumber === page}
-                        className="cursor-pointer"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handlePageChange(pageNumber);
-                        }}
-                      >
-                        {pageNumber}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    className={cn(
-                      "cursor-pointer",
-                      page >= totalPages && "pointer-events-none opacity-50"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handlePageChange(page + 1);
-                    }}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+        {feedback.length > 0 && (
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            pageSize={limit}
+            onPageSizeChange={setLimit}
+            pageSizeOptions={[5, 10, 20, 50]}
+            totalItems={pagination?.totalItems}
+            className="border-t border-gray-100 px-6 py-4"
+          />
         )}
-        <div className="flex flex-wrap items-center px-6 pb-6 justify-between gap-4">
-          <div></div>
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-gray-600">Rows</div>
-            <Select
-              value={limit.toString()}
-              onValueChange={(value) => setLimit(Number(value))}
-            >
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
       </div>
     </div>
   );
