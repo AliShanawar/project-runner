@@ -4,21 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/layout/AuthLayout";
-import { Camera } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { uploadImageToS3 } from "@/lib/uploadImageToS3";
 
 const CreateProfile = () => {
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setAvatar(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const { fileUrl } = await uploadImageToS3(file);
+      setAvatar(fileUrl);
+    } catch (error) {
+      console.error("Failed to upload avatar:", error);
+      toast.error("Failed to upload avatar. Please try again.");
+    } finally {
+      setIsUploading(false);
+      if (fileRef.current) {
+        fileRef.current.value = "";
+      }
     }
   };
 
@@ -26,6 +40,10 @@ const CreateProfile = () => {
     e.preventDefault();
     if (!name) {
       toast.error("Please enter your name");
+      return;
+    }
+    if (isUploading) {
+      toast.error("Please wait for the avatar upload to finish");
       return;
     }
     // Save profile info (e.g. API call)
@@ -77,9 +95,16 @@ const CreateProfile = () => {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="absolute bottom-1 right-1 bg-primary text-white rounded-full p-1.5 hover:bg-[hsl(261,54%,54%)]"
+            className={`absolute bottom-1 right-1 bg-primary text-white rounded-full p-1.5 hover:bg-[hsl(261,54%,54%)] ${
+              isUploading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={isUploading}
           >
-            <Camera size={16} />
+            {isUploading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Camera size={16} />
+            )}
           </button>
 
           {/* Hidden file input */}
@@ -89,6 +114,7 @@ const CreateProfile = () => {
             ref={fileRef}
             onChange={handleAvatarChange}
             className="hidden"
+            disabled={isUploading}
           />
         </div>
 

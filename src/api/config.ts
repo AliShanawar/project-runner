@@ -4,7 +4,7 @@
  * Base API URL - Update this with your actual backend URL
  */
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+  "http://ec2-52-91-126-131.compute-1.amazonaws.com/api/v1";
 
 /**
  * API Endpoints
@@ -53,6 +53,15 @@ export const API_ENDPOINTS = {
   COMPLAINT: {
     ADMIN_ALL: "/complain/admin/all",
     GET_BY_ID: (id: string) => `/complain/${id}`,
+  },
+  WORKPACK: {
+    CREATE: "/workpacks",
+    GET_ALL: "/workpacks",
+    GET_BY_ID: (id: string) => `/workpacks/${id}`,
+    UPDATE: (id: string) => `/workpacks/${id}`,
+    DELETE: (id: string) => `/workpacks/${id}`,
+    GET_BY_SUBCONTRACTOR: (subcontractorId: string) =>
+      `/workpacks/subcontractor/${subcontractorId}`,
   },
   TASK: {
     GET_BY_SITE: (siteId: string) => `/tasks/site/${siteId}`,

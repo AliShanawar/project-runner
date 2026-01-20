@@ -20,6 +20,7 @@ import { Search, Loader2 } from "lucide-react";
 import { useUserStore } from "@/store/user.store";
 import { toast } from "sonner";
 import { PaginationControls } from "@/components/PaginationControls";
+import { showSuccessToast } from "@/lib/utils";
 
 export default function Requests() {
   const [filter, setFilter] = useState("all");
@@ -60,7 +61,7 @@ export default function Requests() {
         action,
         reason: action === "approved" ? "Account approved" : "Account rejected",
       });
-      toast.success(`User ${action} successfully`);
+      showSuccessToast(`User ${action} successfully`);
       fetchRequests();
     } catch (error) {
       console.error(`Error ${action}ing user:`, error);

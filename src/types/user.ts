@@ -7,7 +7,13 @@ export interface User {
   name: string;
   profilePicture?: string | null;
   image?: string;
-  role: "admin" | "employee" | "user" | "forklift" | "subConstructor" | "driver";
+  role:
+    | "admin"
+    | "employee"
+    | "user"
+    | "forklift"
+    | "subConstructor"
+    | "driver";
   verification?: {
     status: "pending" | "approved" | "rejected";
     verifiedAt?: string;
@@ -60,11 +66,15 @@ export interface UpdatePasswordRequest {
 
 export interface UploadResponse {
   url: string;
-  key: string;
+  key?: string;
+  success?: boolean;
+  status?: number;
 }
 
 export interface SignedUrlResponse {
-  url: string;
+  url?: string; // Optional legacy field
+  uploadUrl: string;
+  fileUrl: string;
   key: string;
 }
 

@@ -131,17 +131,21 @@ export async function apiClient<TResponse = unknown>(
     }
 
     // Parse response
-    const data: ApiResponse<TResponse> = await response.json();
+    const json = await response.json();
+    // Some endpoints return `{ data: ... }`, others return raw payload.
+    const payload = (json && Object.prototype.hasOwnProperty.call(json, "data"))
+      ? (json as ApiResponse<TResponse>).data
+      : (json as TResponse);
 
     // Log successful response in dev mode
     if (isDev) {
       console.group(`✅ API Response: ${fetchOptions.method || 'GET'} ${endpoint}`);
       console.log("Status:", response.status);
-      console.log("📥 Data:", data.data);
+      console.log("📥 Data:", payload);
       console.groupEnd();
     }
 
-    return data.data as TResponse;
+    return payload as TResponse;
   } catch (error) {
     // Re-throw ApiClientError
     if (error instanceof ApiClientError) {

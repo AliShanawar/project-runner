@@ -1,4 +1,4 @@
-import { type ReactNode, useState, useEffect } from "react";
+import { type ReactNode, type ChangeEvent, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Select,
@@ -17,11 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Check, Search, UploadCloud, Loader2 } from "lucide-react";
+import { Search, UploadCloud, Loader2, FileText } from "lucide-react";
 import { useSiteStore } from "@/store/site.store";
 import { toast } from "sonner";
 import type { Site } from "@/types";
 import { PaginationControls } from "@/components/PaginationControls";
+import { showSuccessToast } from "@/lib/utils";
+import { uploadImageToS3 } from "@/lib/uploadImageToS3";
 
 type ModalType =
   | null
@@ -58,7 +60,9 @@ const Sites = () => {
     address: "",
     latitude: 0,
     longitude: 0,
+    siteMap: "",
   });
+  const [isUploadingSiteMap, setIsUploadingSiteMap] = useState(false);
 
   // Fetch sites when page or pageSize changes
   useEffect(() => {
@@ -69,6 +73,17 @@ const Sites = () => {
   }, [currentPage, pageSize, getAllSites]);
 
   // Handle site creation
+  const siteMapFileName = formData.siteMap
+    ? decodeURIComponent(
+        formData.siteMap.split("/").pop()?.split("?")[0] ?? "Uploaded file",
+      )
+    : "";
+  const siteMapExtension =
+    siteMapFileName.split(".").pop()?.toLowerCase() ?? "";
+  const isImageSiteMap = ["png", "jpg", "jpeg", "svg"].includes(
+    siteMapExtension,
+  );
+
   const handleCreateSite = async () => {
     if (!formData.name.trim()) {
       toast.error("Please enter a site name");
@@ -85,9 +100,16 @@ const Sites = () => {
             longitude: formData.longitude,
           },
         },
+        siteMap: formData.siteMap || undefined,
       });
       setActiveModal("createSuccess");
-      setFormData({ name: "", address: "", latitude: 0, longitude: 0 });
+      setFormData({
+        name: "",
+        address: "",
+        latitude: 0,
+        longitude: 0,
+        siteMap: "",
+      });
     } catch (err) {
       toast.error("Failed to create site");
       console.error(err);
@@ -104,10 +126,23 @@ const Sites = () => {
     try {
       await updateSite(selectedSite._id, {
         name: formData.name,
+        location: {
+          address: formData.address || "No address provided",
+          coordinates: {
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+          },
+        },
+        siteMap: formData.siteMap || undefined,
       });
-      toast.success("Site updated successfully");
-      setFormData({ name: "", address: "", latitude: 0, longitude: 0 });
-      setActiveModal(null);
+      setFormData({
+        name: "",
+        address: "",
+        latitude: 0,
+        longitude: 0,
+        siteMap: "",
+      });
+      setActiveModal("updateSuccess");
       setSelectedSite(null);
     } catch (err) {
       toast.error("Failed to update site");
@@ -136,7 +171,7 @@ const Sites = () => {
         (err) => {
           toast.error("Failed to fetch sites");
           console.error(err);
-        }
+        },
       );
     }, 300); // 300ms debounce
 
@@ -159,8 +194,29 @@ const Sites = () => {
       (err) => {
         toast.error("Failed to fetch sites");
         console.error(err);
-      }
+      },
     );
+  };
+
+  const handleSiteMapUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingSiteMap(true);
+    try {
+      const { fileUrl } = await uploadImageToS3(file);
+      setFormData((prev) => ({ ...prev, siteMap: fileUrl }));
+      showSuccessToast("Site map uploaded successfully");
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to upload site map";
+      toast.error(errorMessage);
+    } finally {
+      setIsUploadingSiteMap(false);
+      e.target.value = "";
+    }
   };
 
   return (
@@ -300,7 +356,7 @@ const Sites = () => {
                         <button
                           className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors cursor-pointer"
                           onClick={() =>
-                            navigate(`/dashboard/sites/${site._id}`)
+                            navigate(`/dashboard/sites/${site._id}/tasks`)
                           }
                         >
                           View
@@ -314,6 +370,7 @@ const Sites = () => {
                               address: site.location.address,
                               latitude: site.location.coordinates.latitude,
                               longitude: site.location.coordinates.longitude,
+                              siteMap: (site as any).siteMap || "",
                             });
                             setActiveModal("edit");
                           }}
@@ -358,7 +415,7 @@ const Sites = () => {
 
   function renderOverlay(
     content: ReactNode,
-    options?: { labelledBy?: string }
+    options?: { labelledBy?: string },
   ) {
     return (
       <div
@@ -387,11 +444,8 @@ const Sites = () => {
     const titleId = `${title.toLowerCase().replace(/\s+/g, "-")}-title`;
     return renderOverlay(
       <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-xs px-8 py-10 text-center space-y-6">
-        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#8A5BD5]/10 relative">
-          <div className="absolute inset-0 animate-pulse rounded-full bg-[#8A5BD5]/10" />
-          <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#8A5BD5] text-white">
-            <Check className="size-8" />
-          </div>
+        <div className="mx-auto h-32 w-32">
+          <img src="/success.svg" alt="Success" className="h-full w-full" />
         </div>
         <div className="space-y-2">
           <h3 id={titleId} className="text-lg font-semibold text-gray-900">
@@ -406,7 +460,7 @@ const Sites = () => {
           Close
         </Button>
       </div>,
-      { labelledBy: titleId }
+      { labelledBy: titleId },
     );
   }
 
@@ -457,16 +511,50 @@ const Sites = () => {
                   >
                     <UploadCloud className="text-[#8A5BD5] size-8" />
                     <span className="text-sm font-medium text-[#8A5BD5]">
-                      Browse files
+                      {isUploadingSiteMap
+                        ? "Uploading..."
+                        : formData.siteMap
+                          ? "Replace file"
+                          : "Browse files"}
                     </span>
                     <span className="text-xs text-gray-500">
                       Upload your sitemap file
                     </span>
+                    {formData.siteMap && (
+                      <div className="mt-3 w-full space-y-2 text-left">
+                        {isImageSiteMap ? (
+                          <img
+                            src={formData.siteMap}
+                            alt={siteMapFileName}
+                            className="mx-auto h-24 w-full rounded-xl object-contain border border-gray-200 bg-white"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                            <FileText className="text-[#8A5BD5] size-6" />
+                            <div className="flex flex-col text-xs">
+                              <span className="font-medium text-gray-900">
+                                {siteMapFileName}
+                              </span>
+                              <a
+                                href={formData.siteMap}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[#8A5BD5]"
+                              >
+                                Open file
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <input
                       id="site-map-upload"
                       type="file"
                       className="hidden"
                       accept=".pdf,.png,.jpg,.jpeg,.svg"
+                      onChange={handleSiteMapUpload}
+                      disabled={isUploadingSiteMap}
                     />
                   </label>
                 </div>
@@ -484,6 +572,7 @@ const Sites = () => {
                     address: "",
                     latitude: 0,
                     longitude: 0,
+                    siteMap: "",
                   });
                 }}
               >
@@ -492,7 +581,7 @@ const Sites = () => {
               <Button
                 className="bg-[#8A5BD5] hover:bg-[#7A4EC3] rounded-lg sm:w-32"
                 onClick={handleCreateSite}
-                disabled={isLoading}
+                disabled={isLoading || isUploadingSiteMap}
               >
                 {isLoading ? (
                   <>
@@ -505,7 +594,7 @@ const Sites = () => {
               </Button>
             </div>
           </div>,
-          { labelledBy: createTitleId }
+          { labelledBy: createTitleId },
         );
       case "createSuccess":
         return renderSuccessModal({
@@ -531,22 +620,91 @@ const Sites = () => {
                 </p>
               </div>
 
-              <Input
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Enter site name"
-                className="rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
-              />
-              <Input
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                placeholder="Enter site address (optional)"
-                className="rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
-              />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gray-800">
+                    Site Name
+                  </p>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="Enter site name"
+                    className="rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gray-800">Address</p>
+                  <Input
+                    value={formData.address}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
+                    placeholder="Enter site address (optional)"
+                    className="rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
+                  />
+                </div>
+
+                {/* <div className="space-y-3">
+                    <p className="text-sm font-semibold text-gray-800">
+                      Site Map
+                    </p>
+                    <label
+                      htmlFor="site-map-upload"
+                      className="border border-dashed border-[#8A5BD5]/50 rounded-2xl py-8 px-4 flex flex-col items-center gap-3 text-center cursor-pointer hover:border-[#8A5BD5]"
+                    >
+                      <UploadCloud className="text-[#8A5BD5] size-8" />
+                      <span className="text-sm font-medium text-[#8A5BD5]">
+                        {isUploadingSiteMap
+                          ? "Uploading..."
+                          : formData.siteMap
+                          ? "Replace file"
+                          : "Browse files"}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        Upload your sitemap file
+                      </span>
+                      {formData.siteMap && (
+                        <div className="mt-3 w-full space-y-2 text-left">
+                          {isImageSiteMap ? (
+                            <img
+                              src={formData.siteMap}
+                              alt={siteMapFileName}
+                              className="mx-auto h-24 w-full rounded-xl object-contain border border-gray-200 bg-white"
+                            />
+                          ) : (
+                            <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                              <FileText className="text-[#8A5BD5] size-6" />
+                              <div className="flex flex-col text-xs">
+                                <span className="font-medium text-gray-900">
+                                  {siteMapFileName}
+                                </span>
+                                <a
+                                  href={formData.siteMap}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[#8A5BD5]"
+                                >
+                                  Open file
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                  <input
+                    id="site-map-upload"
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.png,.jpg,.jpeg,.svg"
+                    onChange={handleSiteMapUpload}
+                    disabled={isUploadingSiteMap}
+                  /> */}
+              </div>
             </div>
             <div className="px-8 py-6 border-t border-gray-100 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <Button
@@ -559,6 +717,7 @@ const Sites = () => {
                     address: "",
                     latitude: 0,
                     longitude: 0,
+                    siteMap: "",
                   });
                 }}
               >
@@ -580,7 +739,7 @@ const Sites = () => {
               </Button>
             </div>
           </div>,
-          { labelledBy: editTitleId }
+          { labelledBy: editTitleId },
         );
       case "deleteConfirm":
         const deleteTitleId = "delete-site-title";
@@ -622,7 +781,7 @@ const Sites = () => {
               </Button>
             </div>
           </div>,
-          { labelledBy: deleteTitleId }
+          { labelledBy: deleteTitleId },
         );
       case "deleteSuccess":
         return renderSuccessModal({

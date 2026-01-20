@@ -25,10 +25,11 @@ export const userService = {
    * Get signed upload URL
    */
   getSignedUrl: async (fileName: string, fileType: string) => {
-    return api.post<SignedUrlResponse>(API_ENDPOINTS.S3.SIGNED_URL, {
+    const query = new URLSearchParams({
       fileName,
       fileType,
-    });
+    }).toString();
+    return api.get<SignedUrlResponse>(`${API_ENDPOINTS.S3.SIGNED_URL}?${query}`);
   },
 
   /**

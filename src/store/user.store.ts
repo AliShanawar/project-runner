@@ -3,11 +3,13 @@ import { devtools } from "zustand/middleware";
 import { userService } from "@/api/services/user.service";
 import type {
   ApproveRejectRequest,
+  SignedUrlResponse,
   UpdatePasswordRequest,
   UpdateUserRequest,
   User,
   UserFilter,
   Pagination,
+  UploadResponse,
 } from "@/types";
 import { useAuthStore } from "./authStore";
 
@@ -20,11 +22,11 @@ interface UserState {
 
   // Actions
   getAllUsers: (params?: UserFilter) => Promise<void>;
-  uploadFile: (file: File) => Promise<{ url: string; key: string }>;
+  uploadFile: (file: File) => Promise<UploadResponse>;
   getSignedUrl: (
     fileName: string,
     fileType: string
-  ) => Promise<{ url: string; key: string }>;
+  ) => Promise<SignedUrlResponse>;
   updatePassword: (data: UpdatePasswordRequest) => Promise<void>;
   getUser: (id: string) => Promise<User>;
   verifyAndDelete: (data: { password: string; reason: string }) => Promise<void>;

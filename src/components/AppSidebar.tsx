@@ -51,7 +51,7 @@ export function AppSidebar() {
       </div>
 
       {/* Main Content */}
-      <SidebarContent className={cn("py-6", isIconOnly ? "px-2" : "px-3")}>
+      <SidebarContent className="py-6 px-3">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-4">
@@ -63,8 +63,9 @@ export function AppSidebar() {
                       asChild
                       isActive={isActive}
                       className={cn(
-                        "flex items-center px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200",
-                        isIconOnly ? "justify-center" : "gap-3",
+                        "flex items-center px-4 py-3 h-12 rounded-xl text-sm font-semibold transition-all duration-200",
+                        isIconOnly ? "justify-center w-full" : "gap-3",
+                        "group-data-[collapsible=icon]:!h-12 group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!px-4",
                         isActive
                           ? "bg-[#8A5BD5] text-white shadow-[0_14px_30px_rgba(138,91,213,0.2)]"
                           : "text-[#8E8EA9] hover:bg-[#F4F1FD] hover:text-[#8A5BD5]"

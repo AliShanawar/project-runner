@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/user.store";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { showSuccessToast } from "@/lib/utils";
 
 export default function RequestDetail() {
   const { id } = useParams<{ id: string }>();
@@ -27,7 +28,7 @@ export default function RequestDetail() {
         action,
         reason: action === "approved" ? "Account approved" : "Account rejected",
       });
-      toast.success(`User ${action}d successfully`);
+      showSuccessToast(`User ${action}d successfully`);
       navigate("/dashboard/requests");
     } catch (error) {
       console.error(`Error ${action}ing user:`, error);

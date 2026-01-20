@@ -89,9 +89,12 @@ export const authService = {
    * Get signed URL for S3 upload
    */
   getSignedUrl: async (fileName: string, fileType: string) => {
-    return api.post<{ url: string; key: string }>(API_ENDPOINTS.S3.SIGNED_URL, {
+    const query = new URLSearchParams({
       fileName,
       fileType,
-    });
+    }).toString();
+    return api.get<{ url: string; key: string }>(
+      `${API_ENDPOINTS.S3.SIGNED_URL}?${query}`
+    );
   },
 };

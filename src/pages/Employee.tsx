@@ -31,13 +31,15 @@ import { siteService } from "@/api/services/site.service";
 import { PaginationControls } from "@/components/PaginationControls";
 import { toast } from "sonner";
 import type { User, Site } from "@/types";
+import { showSuccessToast } from "@/lib/utils";
 
 export default function Employees() {
   const [employees, setEmployees] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [pagination, setPagination] = useState({
@@ -65,7 +67,7 @@ export default function Employees() {
         page,
         limit,
         role: filter !== "all" ? filter : undefined,
-        search: searchQuery || undefined,
+        search: debouncedSearchQuery || undefined,
       });
       setEmployees(response.users || []);
       if (response.pagination) {
@@ -123,7 +125,7 @@ export default function Employees() {
     try {
       await userService.deleteUser(selectedEmployee._id);
       setEmployees(employees.filter((emp) => emp._id !== selectedEmployee._id));
-      toast.success("Employee deleted successfully");
+      showSuccessToast("Employee deleted successfully");
       closeDialogs();
     } catch (err: any) {
       const errorMessage =
@@ -149,10 +151,10 @@ export default function Employees() {
         employees.map((emp) =>
           emp._id === selectedEmployee._id
             ? { ...emp, siteId: selectedSite }
-            : emp
-        )
+            : emp,
+        ),
       );
-      toast.success("Site changed successfully");
+      showSuccessToast("Site changed successfully");
       closeDialogs();
     } catch (err: any) {
       const errorMessage =
@@ -163,13 +165,23 @@ export default function Employees() {
     }
   };
 
+  // Debounce search input to avoid firing API requests on every keystroke
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedSearchQuery(searchInput);
+      setPage(1);
+    }, 400);
+
+    return () => clearTimeout(handle);
+  }, [searchInput]);
+
   useEffect(() => {
     setPage(1);
-  }, [limit, filter, searchQuery]);
+  }, [limit, filter]);
 
   useEffect(() => {
     fetchEmployees();
-  }, [page, limit, filter, searchQuery]);
+  }, [page, limit, filter, debouncedSearchQuery]);
 
   return (
     <div className="space-y-6">
@@ -200,8 +212,8 @@ export default function Employees() {
             <Search className="text-gray-400 absolute left-3 top-1/2 size-4 -translate-y-1/2" />
             <Input
               placeholder="Search by name or email"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-9 rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
             />
           </div>
@@ -257,7 +269,11 @@ export default function Employees() {
                     </TableCell>
                     <TableCell className="flex items-center gap-3 text-gray-800 font-medium">
                       <img
-                        src={emp.image || emp.profilePicture || "https://icon-library.com/images/default-profile-icon/default-profile-icon-6.jpg"}
+                        src={
+                          emp.image ||
+                          emp.profilePicture ||
+                          "https://icon-library.com/images/default-profile-icon/default-profile-icon-6.jpg"
+                        }
                         alt={emp.name}
                         className="h-8 w-8 rounded-full object-cover"
                       />
@@ -268,16 +284,28 @@ export default function Employees() {
                       {emp.role}
                     </TableCell>
                     <TableCell className="text-gray-700">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        emp.isBlocked ? "bg-red-100 text-red-700" :
-                        emp.verified ? "bg-green-100 text-green-700" :
-                        "bg-yellow-100 text-yellow-700"
-                      }`}>
-                        {emp.isBlocked ? "Blocked" : emp.verified ? "Verified" : "Pending"}
+                      <span
+                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                          emp.isBlocked
+                            ? "bg-red-100 text-red-700"
+                            : emp.verification?.status === "approved"
+                              ? "bg-green-100 text-green-700"
+                              : emp.verification?.status === "rejected"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {emp.isBlocked
+                          ? "Blocked"
+                          : emp.verification?.status === "approved"
+                            ? "Approved"
+                            : emp.verification?.status === "rejected"
+                              ? "Rejected"
+                              : "Pending"}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-4 text-sm font-medium">
+                      <div className="flex justify-end gap-2 text-sm font-medium">
                         <button
                           onClick={() => openChangeSiteDialog(emp)}
                           className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors cursor-pointer"
@@ -321,8 +349,8 @@ export default function Employees() {
           <DialogHeader>
             <DialogTitle>Delete Employee</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete {selectedEmployee?.name}? This action
-              cannot be undone.
+              Are you sure you want to delete {selectedEmployee?.name}? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
@@ -415,6 +443,7 @@ export default function Employees() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

@@ -19,10 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { inventoryService } from "@/api/services/inventory.service";
-import { authService } from "@/api/services/auth.service";
 import { PaginationControls } from "@/components/PaginationControls";
 import type { InventoryItem } from "@/types";
 import { toast } from "sonner";
+import { showSuccessToast } from "@/lib/utils";
+import { uploadImageToS3 } from "@/lib/uploadImageToS3";
 
 type DialogMode = "add" | "edit" | "delete" | null;
 
@@ -123,12 +124,12 @@ const SiteInventory = () => {
 
     setIsUploadingFile(true);
     try {
-      const response = await authService.uploadFile(file);
+      const { fileUrl } = await uploadImageToS3(file);
       setFormData((prev) => ({
         ...prev,
-        image: response.url,
+        image: fileUrl,
       }));
-      toast.success("Image uploaded successfully");
+      showSuccessToast("Image uploaded successfully");
     } catch (err: any) {
       const errorMessage =
         err?.response?.data?.message || "Failed to upload image";
@@ -174,7 +175,7 @@ const SiteInventory = () => {
         });
         // Add new item to the beginning of the list
         setItems([newItem, ...items]);
-        toast.success("Item added successfully");
+        showSuccessToast("Item added successfully");
       } else if (dialogMode === "edit" && selectedItem) {
         await inventoryService.updateItem(selectedItem._id, {
           name: formData.name,
@@ -196,7 +197,7 @@ const SiteInventory = () => {
               : item
           )
         );
-        toast.success("Item updated successfully");
+        showSuccessToast("Item updated successfully");
       }
       closeDialog();
     } catch (err: any) {
@@ -214,7 +215,7 @@ const SiteInventory = () => {
     try {
       await inventoryService.deleteItem(selectedItem._id);
       setItems(items.filter((item) => item._id !== selectedItem._id));
-      toast.success("Item deleted successfully");
+      showSuccessToast("Item deleted successfully");
       closeDialog();
     } catch (err: any) {
       const errorMessage =

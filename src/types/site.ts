@@ -25,6 +25,7 @@ export interface Site {
   id?: string; // For backward compatibility
   name: string;
   location: SiteLocation;
+  siteMap?: string;
   status?: string; // Optional since backend might not send it
   createdBy: CreatedBy;
   employeeCounts?: EmployeeCounts; // Optional since backend might not send it
@@ -36,11 +37,13 @@ export interface Site {
 export interface CreateSiteRequest {
   name: string;
   location: SiteLocation;
+  siteMap?: string;
 }
 
 export interface UpdateSiteRequest {
   name?: string;
   location?: SiteLocation;
+  siteMap?: string;
 }
 
 export interface GetSitesParams {

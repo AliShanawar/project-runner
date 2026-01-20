@@ -35,30 +35,30 @@ const IndustryLayout = () => {
           <Logo />
         </div>
 
-        <nav className="flex flex-col gap-2 px-4 py-6">
+        <nav className="flex flex-col gap-3 px-4 py-8 space-y-4">
           {navItems.map(({ label, path, icon: Icon }) => (
             <NavLink
               key={path}
               to={path}
               className={({ isActive }) =>
                 cn(
-                  "group flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200",
+                  "group inline-flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-semibold transition-all duration-200 whitespace-nowrap w-full",
                   isActive
-                    ? "bg-[#8A5BD5] text-white shadow-[0_14px_30px_rgba(138,91,213,0.2)]"
+                    ? "bg-[#8A5BD5] text-white shadow-[0_14px_28px_rgba(138,91,213,0.18)]"
                     : "text-[#8E8EA9] hover:bg-[#F4F1FD] hover:text-[#8A5BD5]"
                 )
               }
             >
               {({ isActive }) => (
-                <>
+                <div className="flex items-center gap-3 w-full">
                   <Icon
                     className={cn(
-                      "w-5 h-5 transition-colors",
+                      "w-5 h-5 transition-colors shrink-0",
                       isActive ? "text-white" : "text-[#B3ADC7]"
                     )}
                   />
-                  <span>{label}</span>
-                </>
+                  <span className="leading-none tracking-tight">{label}</span>
+                </div>
               )}
             </NavLink>
           ))}

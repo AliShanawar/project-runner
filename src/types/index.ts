@@ -10,3 +10,4 @@ export * from "./chat";
 export * from "./feedback";
 export * from "./complaint";
 export * from "./inventory";
+export * from "./workpack";

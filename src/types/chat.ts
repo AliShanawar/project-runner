@@ -1,28 +1,38 @@
 /* ==================== CHAT TYPES ==================== */
 
-export interface ChatMessage {
-  id: string;
-  siteId: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string;
-  message: string;
-  timestamp: string;
-  type?: "text" | "image" | "file";
-  fileUrl?: string;
+export interface ChatUser {
+  _id: string;
+  name?: string;
+  email?: string;
+  image?: string;
+  profilePicture?: string | null;
 }
 
-export interface ChatRoom {
-  id: string;
-  siteId: string;
-  siteName: string;
-  lastMessage?: ChatMessage;
-  unreadCount: number;
+export interface ChatMessage {
+  _id: string;
+  chat: string;
+  sender: ChatUser;
+  content: string;
+  type?: "text" | "image" | "file";
+  status?: "sent" | "delivered" | "seen" | "deleted";
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ChatSummary {
+  _id: string;
+  chatName?: string;
+  profilePicture?: string | null;
+  isGroupChat?: boolean;
+  participants: ChatUser[];
+  lastMessage?: ChatMessage | null;
+  totalMessages?: number;
+  unreadMessages?: number;
+  updatedAt?: string;
 }
 
 export interface SendMessageRequest {
-  siteId: string;
-  message: string;
+  receiverId: string;
+  content: string;
   type?: ChatMessage["type"];
-  fileUrl?: string;
 }

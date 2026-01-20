@@ -88,13 +88,13 @@ const TaskDetail = () => {
           </div>
         </div>
 
-        <nav className="flex flex-col gap-1 p-4">
+        <nav className="flex flex-col gap-2 p-4">
           {navItems.map(({ label, path, icon: Icon }) => (
             <NavLink
               key={label}
               to={path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                `inline-flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 whitespace-nowrap text-base font-semibold ${
                   isActive
                     ? "bg-[#8A5BD5] text-white shadow-sm"
                     : "text-gray-700 hover:bg-gray-100 hover:text-[#8A5BD5]"
@@ -102,14 +102,14 @@ const TaskDetail = () => {
               }
             >
               {({ isActive }) => (
-                <>
+                <div className="flex items-center gap-3 w-full">
                   <Icon
-                    className={`w-5 h-5 ${
+                    className={`w-5 h-5 shrink-0 ${
                       isActive ? "text-white" : "text-gray-500"
                     }`}
                   />
-                  <span className="font-medium">{label}</span>
-                </>
+                  <span className="font-medium leading-none tracking-tight">{label}</span>
+                </div>
               )}
             </NavLink>
           ))}

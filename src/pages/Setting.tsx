@@ -22,6 +22,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useUserStore } from "@/store/user.store";
 import { userService } from "@/api/services/user.service";
 import { toast } from "sonner";
+import { showSuccessToast } from "@/lib/utils";
+import { uploadImageToS3 } from "@/lib/uploadImageToS3";
 
 const tabs = [
   { key: "profile", label: "Profile", icon: User },
@@ -118,7 +120,7 @@ export default function Setting() {
 
 const Profile = () => {
   const { user } = useAuthStore((state) => state);
-  const { uploadFile, updateMe, isLoading } = useUserStore((state) => state);
+  const { updateMe, isLoading } = useUserStore((state) => state);
   const [name, setName] = useState(user?.name || "");
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -129,13 +131,12 @@ const Profile = () => {
 
     try {
       setUploading(true);
-      // Upload file and get signed URL
-      const { url } = await uploadFile(file);
-      
+      const { fileUrl } = await uploadImageToS3(file);
+
       // Update profile with new avatar URL
-      await updateMe({ profilePicture: url });
-      
-      toast.success("Profile picture updated successfully!");
+      await updateMe({ profilePicture: fileUrl });
+
+      showSuccessToast("Profile picture updated successfully!");
     } catch (error) {
       console.error("Failed to upload image:", error);
       toast.error("Failed to upload image. Please try again.");
@@ -153,7 +154,7 @@ const Profile = () => {
     try {
       await updateMe({ name: name.trim() });
       setIsEditing(false);
-      toast.success("Profile updated successfully!");
+      showSuccessToast("Profile updated successfully!");
     } catch (error) {
       console.error("Failed to update profile:", error);
       toast.error("Failed to update profile. Please try again.");
@@ -489,7 +490,7 @@ const DeleteAccount = () => {
 
     try {
       await verifyAndDelete({password , reason: "I want to delete my account"});
-      toast.success("Your account has been successfully deleted. You will be logged out.");
+      showSuccessToast("Your account has been successfully deleted. You will be logged out.");
       // The verifyAndDelete function in the store will automatically logout
     } catch (error) {
       console.error("Failed to delete account:", error);

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import { showSuccessToast } from "@/lib/utils";
 
 const CreatePassword = () => {
   const [password, setPassword] = useState("");
@@ -29,7 +30,7 @@ const CreatePassword = () => {
     setLoading(true);
     try {
       await resetPassword(password);
-      toast.success("Password updated successfully!");
+      showSuccessToast("Password updated successfully!");
       navigate("/");
     } catch (err) {
       console.error(err);
