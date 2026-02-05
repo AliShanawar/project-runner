@@ -37,7 +37,10 @@ interface ChatState {
   typingUsers: TypingMap;
   loadingChats: boolean;
   loadingMessages: boolean;
+  loadingMoreMessages: boolean;
   error: string | null;
+  chatPages: Record<string, number>;
+  hasMoreMessages: Record<string, boolean>;
 
   connect: (userId: string) => void;
   disconnect: () => void;
@@ -48,6 +51,7 @@ interface ChatState {
     page?: number;
     limit?: number;
   }) => void;
+  loadMoreMessages: (receiverId: string) => void;
   sendMessage: (params: {
     receiverId: string;
     content: string;
@@ -87,7 +91,10 @@ export const useChatStore = create<ChatState>()(
     typingUsers: {},
     loadingChats: false,
     loadingMessages: false,
+    loadingMoreMessages: false,
     error: null,
+    chatPages: {},
+    hasMoreMessages: {},
 
     connect: (userId) => {
       const existing = get().socket;
@@ -110,15 +117,36 @@ export const useChatStore = create<ChatState>()(
           (fallbackMessage ? getChatIdFromMessage(fallbackMessage) : "");
         if (!chatId) return;
 
-        set((state) => ({
-          activeChatId: chatId,
-          messages: {
-            ...state.messages,
-            [chatId]: messages.map(normalizeMessage),
-          },
-          loadingMessages: false,
-          error: null,
-        }));
+        const normalizedMessages = messages.map(normalizeMessage);
+        const isLoadingMore = get().loadingMoreMessages;
+
+        set((state) => {
+          const existingMessages = state.messages[chatId] || [];
+
+          // If loading more (page > 1), prepend older messages
+          // Otherwise, replace with initial messages
+          const updatedMessages = isLoadingMore
+            ? [...normalizedMessages, ...existingMessages]
+            : normalizedMessages;
+
+          // If we received fewer messages than the limit (20), no more to load
+          const hasMore = normalizedMessages.length >= 20;
+
+          return {
+            activeChatId: chatId,
+            messages: {
+              ...state.messages,
+              [chatId]: updatedMessages,
+            },
+            hasMoreMessages: {
+              ...state.hasMoreMessages,
+              [chatId]: hasMore,
+            },
+            loadingMessages: false,
+            loadingMoreMessages: false,
+            error: null,
+          };
+        });
       });
 
       const handleIncoming = (incoming: RawMessage) => {
@@ -225,14 +253,57 @@ export const useChatStore = create<ChatState>()(
       socket.emit("fetch_all_chats", { userId });
     },
 
-    setActiveChatId: (chatId) => set({ activeChatId: chatId }),
+    setActiveChatId: (chatId) => {
+      set((state) => ({
+        activeChatId: chatId,
+        chatPages: {
+          ...state.chatPages,
+          [chatId || ""]: 1,
+        },
+      }));
+    },
 
     fetchChatHistory: ({ receiverId, page = 1, limit = 20 }) => {
       const socket = get().socket;
       const senderId = get().currentUserId;
       if (!socket || !senderId) return;
-      set({ loadingMessages: true });
+
+      set((state) => ({
+        loadingMessages: true,
+        chatPages: {
+          ...state.chatPages,
+          [state.activeChatId || ""]: page,
+        },
+      }));
+
       socket.emit("fetch_chat", { senderId, receiverId, page, limit });
+    },
+
+    loadMoreMessages: (receiverId) => {
+      const socket = get().socket;
+      const senderId = get().currentUserId;
+      const activeChatId = get().activeChatId;
+
+      if (!socket || !senderId || !activeChatId) return;
+
+      const currentPage = get().chatPages[activeChatId] || 1;
+      const hasMore = get().hasMoreMessages[activeChatId] !== false;
+      const isLoading = get().loadingMoreMessages;
+
+      // Don't load if already loading or no more messages
+      if (isLoading || !hasMore) return;
+
+      const nextPage = currentPage + 1;
+
+      set((state) => ({
+        loadingMoreMessages: true,
+        chatPages: {
+          ...state.chatPages,
+          [activeChatId]: nextPage,
+        },
+      }));
+
+      socket.emit("fetch_chat", { senderId, receiverId, page: nextPage, limit: 20 });
     },
 
     sendMessage: ({ receiverId, content, type = "text" }) => {

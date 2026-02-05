@@ -32,6 +32,8 @@ const SiteChat = () => {
   const typingUsers = useChatStore((state) => state.typingUsers);
   const loadingChats = useChatStore((state) => state.loadingChats);
   const loadingMessages = useChatStore((state) => state.loadingMessages);
+  const loadingMoreMessages = useChatStore((state) => state.loadingMoreMessages);
+  const hasMoreMessages = useChatStore((state) => state.hasMoreMessages);
   const connect = useChatStore((state) => state.connect);
   const fetchChats = useChatStore((state) => state.fetchChats);
   const fetchChatHistory = useChatStore((state) => state.fetchChatHistory);
@@ -40,12 +42,14 @@ const SiteChat = () => {
   const startTyping = useChatStore((state) => state.startTyping);
   const stopTyping = useChatStore((state) => state.stopTyping);
   const markSeen = useChatStore((state) => state.markSeen);
+  const loadMoreMessages = useChatStore((state) => state.loadMoreMessages);
 
   const [search, setSearch] = useState("");
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const previousScrollHeightRef = useRef<number>(0);
   const userId = user?._id;
 
   useEffect(() => {
@@ -86,11 +90,38 @@ const SiteChat = () => {
   }, [activeChatId, messages]);
   const lastSeenMessageIdRef = useRef<string | null>(null);
 
+  // Scroll to bottom on new messages or initial load, but maintain position when loading more
   useEffect(() => {
-    if (listRef.current) {
+    if (!listRef.current) return;
+
+    if (loadingMoreMessages) {
+      // Store scroll height before loading more messages
+      previousScrollHeightRef.current = listRef.current.scrollHeight;
+    } else if (previousScrollHeightRef.current > 0) {
+      // Restore scroll position after loading older messages
+      const newScrollHeight = listRef.current.scrollHeight;
+      const scrollDiff = newScrollHeight - previousScrollHeightRef.current;
+      listRef.current.scrollTop = scrollDiff;
+      previousScrollHeightRef.current = 0;
+    } else {
+      // Scroll to bottom for new messages
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
-  }, [activeMessages, loadingMessages]);
+  }, [activeMessages, loadingMessages, loadingMoreMessages]);
+
+  // Handle scroll to load more messages
+  const handleScroll = () => {
+    if (!listRef.current || !receiver?._id || !activeChatId) return;
+
+    const { scrollTop } = listRef.current;
+    const hasMore = hasMoreMessages[activeChatId] !== false;
+
+    // Load more when scrolled near top (within 100px)
+    if (scrollTop < 100 && hasMore && !loadingMoreMessages && !loadingMessages) {
+      previousScrollHeightRef.current = listRef.current.scrollHeight;
+      loadMoreMessages(receiver._id);
+    }
+  };
 
   useEffect(() => {
     lastSeenMessageIdRef.current = null;
@@ -258,8 +289,15 @@ const SiteChat = () => {
 
             <div
               ref={listRef}
+              onScroll={handleScroll}
               className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50/60 min-h-0"
             >
+              {loadingMoreMessages && (
+                <div className="flex items-center justify-center gap-2 text-gray-500 py-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#8A5BD5]" />
+                  <span className="text-xs">Loading older messages...</span>
+                </div>
+              )}
               {loadingMessages ? (
                 <div className="flex items-center gap-2 text-gray-500">
                   <Loader2 className="h-4 w-4 animate-spin text-[#8A5BD5]" />
