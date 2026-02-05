@@ -35,6 +35,13 @@ function getAuthToken(): string | null {
 }
 
 /**
+ * Get refresh token from localStorage
+ */
+function getRefreshToken(): string | null {
+  return localStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
+}
+
+/**
  * Set auth token to localStorage
  */
 export function setAuthToken(token: string): void {
@@ -54,6 +61,72 @@ export function setRefreshToken(token: string): void {
 export function clearAuthTokens(): void {
   localStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
+}
+
+/**
+ * Flag to prevent multiple concurrent token refresh attempts
+ */
+let isRefreshingToken = false;
+let refreshTokenPromise: Promise<boolean> | null = null;
+
+/**
+ * Refresh the access token using the refresh token
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  if (isRefreshingToken) {
+    return refreshTokenPromise!;
+  }
+
+  isRefreshingToken = true;
+  refreshTokenPromise = (async () => {
+    try {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        clearAuthTokens();
+        return false;
+      }
+
+      const url = `${API_BASE_URL}${"/auth/refresh"}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${refreshToken}`,
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        clearAuthTokens();
+        return false;
+      }
+
+      const data = await response.json();
+      const newAccessToken = data.data?.accessToken || data.accessToken;
+
+      if (newAccessToken) {
+        setAuthToken(newAccessToken);
+        if (isDev) {
+          console.log("🔄 Token refreshed successfully");
+        }
+        return true;
+      }
+
+      clearAuthTokens();
+      return false;
+    } catch (error) {
+      if (isDev) {
+        console.error("🔴 Token refresh failed:", error);
+      }
+      clearAuthTokens();
+      return false;
+    } finally {
+      isRefreshingToken = false;
+      refreshTokenPromise = null;
+    }
+  })();
+
+  return refreshTokenPromise;
 }
 
 /**
@@ -102,13 +175,95 @@ export async function apiClient<TResponse = unknown>(
   }
 
   try {
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       ...fetchOptions,
       headers: requestHeaders,
     });
 
-    // Handle non-OK responses
-    if (!response.ok) {
+    // Handle 401 Unauthorized - Session expired
+    if (response.status === 401) {
+      const errorData: ApiError = await response.json().catch(() => ({
+        success: false,
+        message: response.statusText || "An error occurred",
+        statusCode: response.status,
+      }));
+
+      if (errorData.message === "Session expired, please login again") {
+        if (isDev) {
+          console.log("🔐 Session expired, attempting to refresh token...");
+        }
+
+        // Try to refresh token
+        const refreshed = await refreshAccessToken();
+
+        if (refreshed) {
+          // Get new token and retry request
+          const newToken = getAuthToken();
+          const retryHeaders = { ...requestHeaders };
+          if (newToken) {
+            retryHeaders["Authorization"] = `Bearer ${newToken}`;
+          }
+
+          if (isDev) {
+            console.log("🔄 Retrying request with new token...");
+          }
+
+          response = await fetch(url, {
+            ...fetchOptions,
+            headers: retryHeaders,
+          });
+
+          // If retry still fails, handle as normal error
+          if (!response.ok) {
+            const retryErrorData: ApiError = await response.json().catch(() => ({
+              success: false,
+              message: response.statusText || "An error occurred",
+              statusCode: response.status,
+            }));
+
+            if (isDev) {
+              console.group(`❌ API Error (after retry): ${fetchOptions.method || 'GET'} ${endpoint}`);
+              console.log("Status:", response.status);
+              console.log("Error Data:", retryErrorData);
+              console.groupEnd();
+            }
+
+            throw new ApiClientError(
+              response.status,
+              retryErrorData.message || "Request failed",
+              retryErrorData.errors
+            );
+          }
+        } else {
+          // Refresh failed, redirect to login
+          if (isDev) {
+            console.log("🔐 Token refresh failed, clearing auth and redirecting to login");
+          }
+          clearAuthTokens();
+          window.location.href = "/";
+
+          throw new ApiClientError(
+            401,
+            "Session expired, please login again"
+          );
+        }
+      } else {
+        // Other 401 errors
+        if (isDev) {
+          console.group(`❌ API Error: ${fetchOptions.method || 'GET'} ${endpoint}`);
+          console.log("Status:", response.status);
+          console.log("Error Data:", errorData);
+          console.groupEnd();
+        }
+
+        throw new ApiClientError(
+          response.status,
+          errorData.message || "Request failed",
+          errorData.errors
+        );
+      }
+    } else if (!response.ok) {
+      // Handle other non-OK responses
       const errorData: ApiError = await response.json().catch(() => ({
         success: false,
         message: response.statusText || "An error occurred",
