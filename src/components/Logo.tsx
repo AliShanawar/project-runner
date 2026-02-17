@@ -1,11 +1,16 @@
 import logoSrc from "@/assets/Logo.svg";
+import { cn } from "@/lib/utils";
 
-const Logo = () => {
+interface LogoProps {
+  className?: string;
+}
+
+const Logo = ({ className }: LogoProps) => {
   return (
     <img
       src={logoSrc}
       alt="Project Runner logo"
-      className="h-12 w-auto"
+      className={cn("h-12 w-auto", className)}
       loading="lazy"
     />
   );

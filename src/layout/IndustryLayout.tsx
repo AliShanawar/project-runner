@@ -8,6 +8,7 @@ import {
   MessageSquareWarning,
   Briefcase,
   Bell,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/Logo";
@@ -24,6 +25,7 @@ const IndustryLayout = () => {
     { label: "Chat", path: "chat", icon: MessageCircle },
     { label: "Feedback", path: "feedback", icon: FileText },
     { label: "Complain", path: "complain", icon: MessageSquareWarning },
+    { label: "H&S Logs", path: "hs-logs", icon: Shield },
     { label: "Work Pack", path: "work-pack", icon: Briefcase },
   ];
 
@@ -31,11 +33,11 @@ const IndustryLayout = () => {
     <div className="flex min-h-screen bg-[#F7F7F9]">
       {/* Sidebar */}
       <aside className="relative w-[260px] bg-white border-r border-[#EAE6F3] shadow-[0_12px_30px_rgba(17,12,34,0.04)] flex flex-col">
-        <div className="px-6 py-7 border-b border-[#EAE6F3]">
-          <Logo />
+        <div className="px-6 py-6 border-b border-[#EAE6F3]">
+          <Logo className="h-14" />
         </div>
 
-        <nav className="flex flex-col gap-3 px-4 py-8 space-y-4">
+        <nav className="flex flex-col gap-3 px-4 pt-12 pb-8 space-y-4">
           {navItems.map(({ label, path, icon: Icon }) => (
             <NavLink
               key={path}

@@ -28,6 +28,7 @@ import SiteFeedback from "./pages/SiteFeedback";
 import SiteComplaint from "./pages/SiteComplaint";
 import ComplaintDetail from "./pages/ComplaintDetail";
 import SiteWorkPack from "./pages/SiteWorkPack";
+import SiteHSLogs from "./pages/SiteHSLogs";
 import { SignIn } from "./pages/Login";
 import FeedbackDetail from "./pages/FeedbackDetail";
 
@@ -137,6 +138,7 @@ const App = () => (
               <Route path="feedback/:id" element={<FeedbackDetail />} />
               <Route path="complain" element={<SiteComplaint />} />
               <Route path="complain/:id" element={<ComplaintDetail />} />
+              <Route path="hs-logs" element={<SiteHSLogs />} />
               <Route path="work-pack" element={<SiteWorkPack />} />
             </Route>
             <Route path="employees" element={<Employees />} />

@@ -63,6 +63,15 @@ export const API_ENDPOINTS = {
     GET_BY_SUBCONTRACTOR: (subcontractorId: string) =>
       `/workpacks/subcontractor/${subcontractorId}`,
   },
+  HS_LOG: {
+    CREATE: "/hs-logs",
+    GET_ALL: "/hs-logs",
+    GET_BY_SITE: (siteId: string) => `/hs-logs/site/${siteId}`,
+    GET_BY_ID: (hsLogId: string) => `/hs-logs/${hsLogId}`,
+    UPDATE: (hsLogId: string) => `/hs-logs/${hsLogId}`,
+    DELETE: (hsLogId: string) => `/hs-logs/${hsLogId}`,
+    UPDATE_STATUS: (hsLogId: string) => `/hs-logs/${hsLogId}/status`,
+  },
   TASK: {
     GET_BY_SITE: (siteId: string) => `/tasks/site/${siteId}`,
     GET_BY_ID: (taskId: string) => `/tasks/${taskId}`,
