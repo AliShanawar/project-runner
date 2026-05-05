@@ -14,6 +14,9 @@ export interface SiteEmployee {
   email: string;
   role: EmployeeRole;
   avatar?: string | null;
+  image?: string | null;
+  profilePicture?: string | null;
+  siteId?: string | null;
 }
 
 export interface SiteEmployeesResponse {

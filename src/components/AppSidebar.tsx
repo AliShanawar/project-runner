@@ -36,7 +36,7 @@ export function AppSidebar() {
     <Sidebar
       collapsible="none"
       className={cn(
-        "relative border-r border-[#EAE6F3] bg-white shadow-[0_12px_30px_rgba(17,12,34,0.04)]",
+        "sticky top-0 h-screen self-start border-r border-[#EAE6F3] bg-white shadow-[0_12px_30px_rgba(17,12,34,0.04)]",
         isIconOnly ? "w-[84px]" : "w-[260px]"
       )}
     >

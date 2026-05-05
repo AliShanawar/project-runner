@@ -32,7 +32,9 @@ export const useFeedbackStore = create<FeedbackState>()(
     fetchFeedback: async (params) => {
       try {
         set({ isLoading: true, error: null });
-        const response = await feedbackService.getAllFeedback(params);
+        const response = params?.siteId
+          ? await feedbackService.getFeedbackBySite(params.siteId, params)
+          : await feedbackService.getAllFeedback(params);
         const totalItems =
           response?.pagination?.totalItems ?? response.feedback?.length ?? 0;
         const itemsPerPage =

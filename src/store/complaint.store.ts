@@ -32,7 +32,9 @@ export const useComplaintStore = create<ComplaintState>()(
     fetchComplaints: async (params) => {
       try {
         set({ isLoading: true, error: null });
-        const response = await complaintService.getAllComplaints(params);
+        const response = params?.siteId
+          ? await complaintService.getComplaintsBySite(params.siteId, params)
+          : await complaintService.getAllComplaints(params);
         const totalItems =
           response?.pagination?.totalItems ?? response.complains?.length ?? 0;
         const itemsPerPage =

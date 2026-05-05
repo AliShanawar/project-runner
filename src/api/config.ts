@@ -3,8 +3,8 @@
 /**
  * Base API URL - Update this with your actual backend URL
  */
-export const API_BASE_URL =
-  "http://ec2-52-91-126-131.compute-1.amazonaws.com/api/v1";
+// "http://ec2-52-91-126-131.compute-1.amazonaws.com/api/v1";
+export const API_BASE_URL = "https://api.projectrunneruk.com/api/v1";
 
 /**
  * API Endpoints
@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
     VERIFY_AND_DELETE: "/user/verify-and-delete",
     UPDATE_ME: "/user/update-me",
     APPROVE_REJECT: (userId: string) => `/user/approve-reject/${userId}`,
+    ASSIGN_SITE: (userId: string) => `/user/${userId}/site`,
     DELETE_USER: (userId: string) => `/user/${userId}`,
   },
   LEGAL: {
@@ -47,16 +48,21 @@ export const API_ENDPOINTS = {
     GET_EMPLOYEES: (id: string) => `/site/${id}/employees`,
   },
   FEEDBACK: {
+    CREATE: "/feedback",
     ADMIN_ALL: "/feedback/admin/all",
+    GET_BY_SITE: (siteId: string) => `/feedback/site/${siteId}`,
     GET_BY_ID: (id: string) => `/feedback/${id}`,
   },
   COMPLAINT: {
+    CREATE: "/complain",
     ADMIN_ALL: "/complain/admin/all",
+    GET_BY_SITE: (siteId: string) => `/complain/site/${siteId}`,
     GET_BY_ID: (id: string) => `/complain/${id}`,
   },
   WORKPACK: {
     CREATE: "/workpacks",
     GET_ALL: "/workpacks",
+    GET_BY_SITE: (siteId: string) => `/workpacks/site/${siteId}`,
     GET_BY_ID: (id: string) => `/workpacks/${id}`,
     UPDATE: (id: string) => `/workpacks/${id}`,
     DELETE: (id: string) => `/workpacks/${id}`,
@@ -69,6 +75,7 @@ export const API_ENDPOINTS = {
   },
   INVENTORY: {
     GET_ALL: "/inventory",
+    GET_BY_SITE: (siteId: string) => `/inventory/site/${siteId}`,
     GET_BY_ID: (id: string) => `/inventory/${id}`,
     CREATE: "/inventory",
     UPDATE: (id: string) => `/inventory/${id}`,

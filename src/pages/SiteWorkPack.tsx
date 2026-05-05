@@ -1,17 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Send, Paperclip } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/PaginationControls";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useWorkpackStore } from "@/store/workpack.store";
-import type { Workpack, WorkpackStatus } from "@/types";
+import type { WorkpackStatus } from "@/types";
 import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-const statusDotColor: Record<WorkpackStatus, string> = {
-  active: "bg-[#8A5BD5]",
-  completed: "bg-emerald-500",
-  cancelled: "bg-red-500",
+const statusClasses: Record<WorkpackStatus, string> = {
+  active: "bg-purple-50 text-[#7A4EC3] border-purple-100",
+  completed: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  cancelled: "bg-red-50 text-red-700 border-red-100",
 };
 
 const formatDateTime = (value?: string) => {
@@ -25,40 +33,23 @@ const formatDateTime = (value?: string) => {
   });
 };
 
-const formatTimeOnly = (value?: string) => {
-  if (!value) return "--";
-  return new Date(value).toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-};
-
-const getInitials = (name?: string) => {
-  if (!name) return "U";
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((part) => part.charAt(0))
-    .join("")
-    .toUpperCase();
+const formatStatus = (status: WorkpackStatus) => {
+  return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
 const SiteWorkPack = () => {
+  const { siteId } = useParams<{ siteId: string }>();
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [messageDraft, setMessageDraft] = useState(""); // UI only placeholder
 
   const {
     workpacks,
     pagination,
-    selectedWorkpack,
     isLoading,
-    isLoadingDetails,
-    fetchWorkpacks,
-    fetchWorkpackById,
+    error,
+    fetchWorkpacksBySite,
     clearSelected,
   } = useWorkpackStore();
 
@@ -75,8 +66,10 @@ const SiteWorkPack = () => {
   // Fetch workpacks when filters or pagination change
   useEffect(() => {
     const loadWorkpacks = async () => {
+      if (!siteId) return;
+
       try {
-        await fetchWorkpacks({
+        await fetchWorkpacksBySite(siteId, {
           page,
           limit,
           search: searchTerm || undefined,
@@ -88,7 +81,7 @@ const SiteWorkPack = () => {
     };
 
     loadWorkpacks();
-  }, [page, limit, searchTerm, fetchWorkpacks]);
+  }, [page, limit, searchTerm, siteId, fetchWorkpacksBySite]);
 
   // Clear selected workpack on unmount
   useEffect(
@@ -98,193 +91,145 @@ const SiteWorkPack = () => {
     [clearSelected]
   );
 
-  const activePack: Workpack | null = useMemo(() => {
-    if (selectedWorkpack) return selectedWorkpack;
-    if (selectedId) return workpacks.find((wp) => wp._id === selectedId) || null;
-    return null;
-  }, [selectedId, selectedWorkpack, workpacks]);
-
-  const handleSelectPack = async (workpackId: string) => {
-    setSelectedId(workpackId);
-    try {
-      await fetchWorkpackById(workpackId);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load work pack details");
-    }
-  };
-
   const totalPages = pagination?.totalPages || 1;
   const totalItems = pagination?.totalItems;
 
   return (
-    <div className="rounded-3xl bg-white shadow-sm border border-gray-100 p-6 h-[calc(100vh-160px)]">
-      <div className="mb-5">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-semibold text-gray-900">Work Pack</h1>
       </div>
 
-      <div className="flex gap-6 h-[calc(100%-48px)]">
-        {/* Sidebar */}
-        <div className="w-96 bg-gray-50/60 border border-gray-100 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex flex-col">
-          <div className="px-4 pt-4 pb-3 border-b border-gray-100">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 size-4 text-gray-400 -translate-y-1/2" />
-              <Input
-                placeholder="Search"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-9 h-10 rounded-xl border-gray-200 bg-white focus-visible:ring-[#8A5BD5]"
-              />
-            </div>
+      <div className="bg-white border border-border rounded-2xl shadow-sm">
+        <div className="flex flex-wrap items-center gap-4 border-b border-gray-100 px-6 py-4">
+          <div className="relative w-full max-w-xs flex-1 sm:flex-none">
+            <Search className="text-gray-400 absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+            <Input
+              placeholder="Search work packs"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-9 rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
+            />
           </div>
-
-          {/* Work Pack List */}
-          <div className="overflow-y-auto flex-1">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="h-6 w-6 text-[#8A5BD5] animate-spin" />
-              </div>
-            ) : workpacks.length === 0 ? (
-              <div className="text-center text-sm text-gray-500 py-10 px-4">
-                No work packs found
-              </div>
-            ) : (
-              workpacks.map((pack) => (
-                <button
-                  key={pack._id}
-                  onClick={() => handleSelectPack(pack._id)}
-                  className={`w-full text-left px-6 py-4 border-b border-gray-100 transition-colors ${
-                    selectedId === pack._id ? "bg-white" : "hover:bg-white/70"
-                  }`}
-                >
-                  <div className="flex justify-between items-center gap-2 mb-1">
-                    <p className="font-semibold text-sm text-gray-900 truncate">
-                      {pack.title}
-                    </p>
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        statusDotColor[pack.status] || "bg-gray-300"
-                      }`}
-                      aria-hidden
-                    />
-                    <span className="text-[11px] text-gray-400">
-                      {formatTimeOnly(pack.updatedAt)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 line-clamp-2">
-                    Admin: {pack.description || "No description provided"}
-                  </p>
-                </button>
-              ))
-            )}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="border-t border-gray-100 px-4 py-3">
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                totalItems={totalItems}
-                pageSize={limit}
-              />
-            </div>
-          )}
         </div>
 
-        {/* Right Content */}
-        <div className="flex-1 bg-gray-50/80 border border-gray-100 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex flex-col">
-          {isLoadingDetails ? (
-            <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="h-7 w-7 text-[#8A5BD5] animate-spin" />
-            </div>
-          ) : !activePack ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
-              <img
-                src="/assets/illustrations/chat-placeholder.png"
-                alt="Placeholder"
-                className="w-60 mb-6"
-              />
-              <h2 className="text-lg font-semibold text-gray-900">
-                No work pack selected
-              </h2>
-              <p className="text-sm text-gray-500 max-w-sm mx-auto">
-                Choose a work pack from the list to see its details.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="border-b border-gray-200 px-6 py-4">
-                <h2 className="text-base font-semibold text-gray-900">
-                  {activePack.title}
-                </h2>
-              </div>
+        <div className="px-6 py-4">
+          <Table className="bg-transparent">
+            <TableHeader>
+              <TableRow className="bg-gray-50 border-b border-gray-100">
+                <TableHead className="text-gray-500 font-medium py-3">
+                  Title
+                </TableHead>
+                <TableHead className="text-gray-500 font-medium py-3">
+                  Description
+                </TableHead>
+                <TableHead className="text-gray-500 font-medium py-3">
+                  Created By
+                </TableHead>
+                <TableHead className="text-gray-500 font-medium py-3">
+                  Status
+                </TableHead>
+                <TableHead className="text-gray-500 font-medium py-3">
+                  Created
+                </TableHead>
+                <TableHead className="text-gray-500 font-medium py-3">
+                  Updated
+                </TableHead>
+              </TableRow>
+            </TableHeader>
 
-              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-[#8A5BD5] text-white">
-                      {getInitials(activePack.createdBy?.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex flex-col mb-2">
-                      <span className="text-sm font-semibold text-gray-900">
-                        {activePack.createdBy?.name || "Unknown"}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formatDateTime(activePack.createdAt)}
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="size-5 animate-spin text-[#8A5BD5]" />
+                      <span className="text-gray-500">
+                        Loading work packs...
                       </span>
                     </div>
-                    <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 leading-6">
-                      {activePack.description ||
-                        "No description provided for this work pack."}
+                  </TableCell>
+                </TableRow>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center">
+                    <div className="text-red-500">Error: {error}</div>
+                  </TableCell>
+                </TableRow>
+              ) : workpacks.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center">
+                    <div className="text-gray-500">
+                      {searchTerm
+                        ? "No work packs found matching your search"
+                        : "No work packs found"}
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
-                    WP
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex flex-col mb-2">
-                      <span className="text-sm font-semibold text-gray-900">
-                        Status
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        Updated {formatDateTime(activePack.updatedAt)}
-                      </span>
-                    </div>
-                    <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 inline-flex items-center gap-2 text-sm text-gray-700">
-                      <Badge variant="outline" className="bg-gray-100 border-gray-200">
-                        {activePack.status.toUpperCase()}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                workpacks.map((pack) => (
+                  <TableRow
+                    key={pack._id}
+                    className="border-b border-gray-100 hover:bg-gray-50/40 transition-colors"
+                  >
+                    <TableCell className="py-4 text-gray-800 font-medium">
+                      <div className="max-w-[240px] truncate" title={pack.title}>
+                        {pack.title}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-700">
+                      <div
+                        className="max-w-[360px] truncate"
+                        title={pack.description || "No description provided"}
+                      >
+                        {pack.description || "No description provided"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-700">
+                      <div className="flex flex-col">
+                        <span>{pack.createdBy?.name || "Unknown"}</span>
+                        {pack.createdBy?.email && (
+                          <span className="text-xs text-gray-400">
+                            {pack.createdBy.email}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <Badge
+                        variant="outline"
+                        className={`rounded-full px-2.5 py-1 font-medium ${
+                          statusClasses[pack.status] ||
+                          "bg-gray-50 text-gray-700 border-gray-100"
+                        }`}
+                      >
+                        {formatStatus(pack.status)}
                       </Badge>
-                      <span className="text-gray-600">
-                        Current state of this work pack.
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 px-6 py-4 bg-white rounded-b-2xl flex items-center gap-3">
-                <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-                  <Paperclip className="size-4 text-gray-500" />
-                </button>
-                <Input
-                  placeholder="Type a message"
-                  value={messageDraft}
-                  onChange={(e) => setMessageDraft(e.target.value)}
-                  className="flex-1 h-10 rounded-xl border-gray-200 focus-visible:ring-[#8A5BD5]"
-                />
-                <button className="p-2 rounded-full bg-[#8A5BD5] text-white hover:bg-[#7A4EC3] transition-colors">
-                  <Send className="size-4" />
-                </button>
-              </div>
-            </>
-          )}
+                    </TableCell>
+                    <TableCell className="text-gray-700">
+                      {formatDateTime(pack.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-gray-700">
+                      {formatDateTime(pack.updatedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
+
+        {!isLoading && workpacks.length > 0 && (
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={totalItems}
+            pageSize={limit}
+            className="px-6 py-4 border-t border-gray-100"
+            label="Rows"
+          />
+        )}
       </div>
     </div>
   );

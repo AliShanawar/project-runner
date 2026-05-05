@@ -17,6 +17,7 @@ export const inventoryService = {
     if (params?.page) queryParams.append("page", params.page.toString());
     if (params?.limit) queryParams.append("limit", params.limit.toString());
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.siteId) queryParams.append("siteId", params.siteId);
 
     const queryString = queryParams.toString();
     const endpoint = queryString
@@ -26,6 +27,23 @@ export const inventoryService = {
     const response = await api.get<InventoryResponseData>(endpoint);
     // The API client already returns the data object
     return response;
+  },
+
+  /**
+   * Get inventory items for a specific site
+   */
+  getItemsBySite: async (siteId: string, params?: GetInventoryParams) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString
+      ? `${API_ENDPOINTS.INVENTORY.GET_BY_SITE(siteId)}?${queryString}`
+      : API_ENDPOINTS.INVENTORY.GET_BY_SITE(siteId);
+
+    return api.get<InventoryResponseData>(endpoint);
   },
 
   /**

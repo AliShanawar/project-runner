@@ -91,6 +91,15 @@ export const userService = {
   },
 
   /**
+   * Assign a site to a forklift or subcontractor user
+   */
+  assignUserSite: async (userId: string, siteId: string) => {
+    return api.patch<{ user: User }>(API_ENDPOINTS.USER.ASSIGN_SITE(userId), {
+      siteId,
+    });
+  },
+
+  /**
    * Delete user (Admin only)
    */
   deleteUser: async (userId: string) => {

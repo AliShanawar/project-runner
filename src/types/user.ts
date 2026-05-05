@@ -29,6 +29,7 @@ export interface User {
   verified?: boolean;
   isLoggedOut?: boolean;
   isNotification?: boolean;
+  inductionNumber?: string | null;
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string | null;
@@ -57,6 +58,7 @@ export interface UpdateUserRequest {
   identity?: string;
   isNotification?: boolean;
   profilePicture?: string;
+  image?: string;
 }
 
 export interface UpdatePasswordRequest {

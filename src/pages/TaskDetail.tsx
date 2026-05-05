@@ -15,7 +15,7 @@ import {
   Loader2,
   ArrowRight,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/store/authStore";
 import { useTaskStore } from "@/store/task.store";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ const TaskDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const profileImage = user?.image || user?.profilePicture;
   const { selectedTask: task, isLoading, getTaskById, clearSelectedTask } = useTaskStore();
 
   useEffect(() => {
@@ -131,11 +132,21 @@ const TaskDetail = () => {
             <button className="relative p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer">
               <Bell size={20} className="text-foreground" />
             </button>
-            <Avatar>
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {user?.name?.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/settings")}
+              className="cursor-pointer rounded-full"
+              aria-label="Open settings"
+            >
+              <Avatar>
+                {profileImage && (
+                  <AvatarImage src={profileImage} alt={user?.name || "Profile"} />
+                )}
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {user?.name?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </button>
           </div>
         </header>
 

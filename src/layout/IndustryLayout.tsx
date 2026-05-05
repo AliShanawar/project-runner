@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   ClipboardList,
   Users,
@@ -12,10 +12,12 @@ import {
 import { cn } from "@/lib/utils";
 import Logo from "@/components/Logo";
 import { useAuthStore } from "@/store/authStore";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const IndustryLayout = () => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const profileImage = user?.image || user?.profilePicture;
 
   const navItems = [
     { label: "Task", path: "tasks", icon: ClipboardList },
@@ -30,7 +32,7 @@ const IndustryLayout = () => {
   return (
     <div className="flex min-h-screen bg-[#F7F7F9]">
       {/* Sidebar */}
-      <aside className="relative w-[260px] bg-white border-r border-[#EAE6F3] shadow-[0_12px_30px_rgba(17,12,34,0.04)] flex flex-col">
+      <aside className="sticky top-0 h-screen w-[260px] shrink-0 bg-white border-r border-[#EAE6F3] shadow-[0_12px_30px_rgba(17,12,34,0.04)] flex flex-col">
         <div className="px-6 py-7 border-b border-[#EAE6F3]">
           <Logo />
         </div>
@@ -80,11 +82,21 @@ const IndustryLayout = () => {
             <button className="p-2 rounded-full border border-[#E4E2EF] hover:shadow-sm transition-shadow bg-white">
               <Bell className="w-5 h-5 text-[#8A5BD5]" />
             </button>
-            <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-[#8A5BD5] text-white">
-                {user?.name?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/settings")}
+              className="cursor-pointer rounded-full"
+              aria-label="Open settings"
+            >
+              <Avatar className="h-10 w-10">
+                {profileImage && (
+                  <AvatarImage src={profileImage} alt={user?.name || "Profile"} />
+                )}
+                <AvatarFallback className="bg-[#8A5BD5] text-white">
+                  {user?.name?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </button>
           </div>
         </header>
 

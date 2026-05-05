@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import { showSuccessToast } from "@/lib/utils";
+import {
+  isStrongPassword,
+  STRONG_PASSWORD_MESSAGE,
+} from "@/lib/passwordValidation";
 
 const CreatePassword = () => {
   const [password, setPassword] = useState("");
@@ -24,6 +28,11 @@ const CreatePassword = () => {
 
     if (password !== confirm) {
       toast.error("Passwords do not match!");
+      return;
+    }
+
+    if (!isStrongPassword(password)) {
+      toast.error(STRONG_PASSWORD_MESSAGE);
       return;
     }
 

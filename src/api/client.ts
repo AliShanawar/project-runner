@@ -64,6 +64,15 @@ export function clearAuthTokens(): void {
 }
 
 /**
+ * Force logout: clear all auth state and redirect to login
+ */
+function forceLogout(): void {
+  clearAuthTokens();
+  localStorage.removeItem("auth-storage");
+  window.location.href = "/";
+}
+
+/**
  * Flag to prevent multiple concurrent token refresh attempts
  */
 let isRefreshingToken = false;
@@ -147,6 +156,11 @@ export async function apiClient<TResponse = unknown>(
     ...(!isFormData && { "Content-Type": "application/json" }),
     ...(headers as Record<string, string>),
   };
+
+  // Bypass ngrok browser interstitial page for API requests.
+  if (API_BASE_URL.includes("ngrok")) {
+    requestHeaders["ngrok-skip-browser-warning"] = "true";
+  }
 
   // Add auth token if required
   if (requiresAuth) {
@@ -276,6 +290,11 @@ export async function apiClient<TResponse = unknown>(
         console.log("Status:", response.status);
         console.log("Error Data:", errorData);
         console.groupEnd();
+      }
+
+      if (errorData.message === "Authentication required") {
+        if (isDev) console.log("🔐 Authentication required, forcing logout...");
+        forceLogout();
       }
 
       throw new ApiClientError(

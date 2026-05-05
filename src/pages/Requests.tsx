@@ -22,6 +22,11 @@ import { toast } from "sonner";
 import { PaginationControls } from "@/components/PaginationControls";
 import { showSuccessToast } from "@/lib/utils";
 
+const displayValue = (value?: string | null) => {
+  const text = value?.trim();
+  return text || "N/A";
+};
+
 export default function Requests() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -163,13 +168,16 @@ export default function Requests() {
                         {(page - 1) * pageSize + index + 1}
                       </TableCell>
                       <TableCell className="text-gray-800 font-medium">
-                        {req.name}
+                        {displayValue(req.name)}
                       </TableCell>
-                      <TableCell className="text-gray-700">{req.email}</TableCell>
-                      <TableCell className="text-gray-700 capitalize">{req.role}</TableCell>
                       <TableCell className="text-gray-700">
-                        {/* Induction number is not in User type yet, using placeholder or if available */}
-                        --
+                        {displayValue(req.email)}
+                      </TableCell>
+                      <TableCell className="text-gray-700 capitalize">
+                        {displayValue(req.role)}
+                      </TableCell>
+                      <TableCell className="text-gray-700">
+                        {displayValue(req.inductionNumber)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-4 text-sm font-medium">

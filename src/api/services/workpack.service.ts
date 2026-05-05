@@ -49,6 +49,16 @@ export const workpackService = {
   },
 
   /**
+   * Get workpacks for a specific site
+   */
+  getBySite: async (siteId: string, params?: WorkpackQueryParams) => {
+    const queryString = buildQueryString(params);
+    const baseEndpoint = API_ENDPOINTS.WORKPACK.GET_BY_SITE(siteId);
+    const endpoint = queryString ? `${baseEndpoint}?${queryString}` : baseEndpoint;
+    return api.get<WorkpackListResponse>(endpoint);
+  },
+
+  /**
    * Get a single workpack by ID
    */
   getById: async (workpackId: string) => {

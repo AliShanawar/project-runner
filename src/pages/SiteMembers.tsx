@@ -86,7 +86,6 @@ const SiteMembers = () => {
             <SelectContent>
               <SelectItem value="all">All Members</SelectItem>
               <SelectItem value="forklift">Forklift</SelectItem>
-              <SelectItem value="builder">Builder</SelectItem>
               <SelectItem value="subConstructor">Subcontractor</SelectItem>
             </SelectContent>
           </Select>

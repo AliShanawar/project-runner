@@ -2,11 +2,23 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type { Socket } from "socket.io-client";
 import { closeSocket, initSocket } from "@/lib/socket";
-import type { ChatMessage, ChatSummary } from "@/types";
+import type {
+  ChatMessage,
+  ChatSummary,
+  SiteChatMemberItem,
+  SiteMembersPagination,
+} from "@/types";
 
 type RawMessage = {
   _id: string;
-  chat: string | { _id: string };
+  chat:
+    | string
+    | {
+        _id: string;
+        isGroupChat?: boolean;
+        participants?: Array<string | { _id: string }>;
+        updatedAt?: string;
+      };
   sender: ChatMessage["sender"];
   content: string;
   type?: ChatMessage["type"];
@@ -24,6 +36,12 @@ type ChatErrorPayload = { message?: string };
 
 type TypingPayload = { senderId: string };
 
+type SiteMembersPayload = {
+  siteId: string;
+  members: SiteChatMemberItem[];
+  pagination: SiteMembersPagination;
+};
+
 type TypingMap = Record<string, boolean>;
 type MessageMap = Record<string, ChatMessage[]>;
 
@@ -32,10 +50,13 @@ interface ChatState {
   isConnected: boolean;
   currentUserId: string | null;
   chats: ChatSummary[];
+  siteMembers: SiteChatMemberItem[];
+  siteMembersPagination: SiteMembersPagination | null;
   messages: MessageMap;
   activeChatId: string | null;
   typingUsers: TypingMap;
   loadingChats: boolean;
+  loadingSiteMembers: boolean;
   loadingMessages: boolean;
   loadingMoreMessages: boolean;
   error: string | null;
@@ -44,7 +65,14 @@ interface ChatState {
 
   connect: (userId: string) => void;
   disconnect: () => void;
-  fetchChats: () => void;
+  fetchChats: (siteId?: string) => void;
+  fetchSiteMembers: (params: {
+    siteId: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+  }) => void;
   setActiveChatId: (chatId: string | null) => void;
   fetchChatHistory: (params: {
     receiverId: string;
@@ -66,6 +94,13 @@ interface ChatState {
 const getChatIdFromMessage = (message: RawMessage) =>
   typeof message?.chat === "string" ? message.chat : message?.chat?._id || "";
 
+const getChatParticipantIds = (chat: RawMessage["chat"]) => {
+  if (!chat || typeof chat === "string") return [];
+  return (chat.participants || []).map((participant) =>
+    typeof participant === "string" ? participant : participant._id,
+  );
+};
+
 const normalizeMessage = (message: RawMessage): ChatMessage => {
   const chatId = getChatIdFromMessage(message);
   return {
@@ -86,10 +121,13 @@ export const useChatStore = create<ChatState>()(
     isConnected: false,
     currentUserId: null,
     chats: [],
+    siteMembers: [],
+    siteMembersPagination: null,
     messages: {},
     activeChatId: null,
     typingUsers: {},
     loadingChats: false,
+    loadingSiteMembers: false,
     loadingMessages: false,
     loadingMoreMessages: false,
     error: null,
@@ -107,7 +145,23 @@ export const useChatStore = create<ChatState>()(
       socket.on("disconnect", () => set({ isConnected: false }));
 
       socket.on("all_chats", (chats: ChatSummary[]) => {
-        set({ chats, loadingChats: false });
+        set((state) => ({
+          chats,
+          activeChatId: chats.some((chat) => chat._id === state.activeChatId)
+            ? state.activeChatId
+            : null,
+          loadingChats: false,
+          error: null,
+        }));
+      });
+
+      socket.on("site_members", (payload: SiteMembersPayload) => {
+        set({
+          siteMembers: payload.members || [],
+          siteMembersPagination: payload.pagination || null,
+          loadingSiteMembers: false,
+          error: null,
+        });
       });
 
       socket.on("chat_history", ({ chat, messages }: ChatHistoryPayload) => {
@@ -165,10 +219,40 @@ export const useChatStore = create<ChatState>()(
               ? { ...chat, lastMessage: message, updatedAt: message.createdAt }
               : chat,
           );
+          const participantIds = getChatParticipantIds(incoming.chat);
+          const otherParticipantId = participantIds.find(
+            (id) => id !== state.currentUserId,
+          );
+          const updatedSiteMembers = state.siteMembers.map((item) => {
+            const isMatchingMember = item.member._id === otherParticipantId;
+            const isMatchingChat = item.chat?._id === chatId;
+
+            if (!isMatchingMember && !isMatchingChat) return item;
+
+            return {
+              ...item,
+              chat:
+                typeof incoming.chat === "string"
+                  ? item.chat
+                  : {
+                      _id: incoming.chat._id,
+                      isGroupChat: incoming.chat.isGroupChat,
+                      participants: incoming.chat.participants,
+                      updatedAt: incoming.chat.updatedAt || message.createdAt,
+                    },
+              latestMessage: message,
+              unreadMessages:
+                message.sender._id === state.currentUserId
+                  ? item.unreadMessages || 0
+                  : (item.unreadMessages || 0) + 1,
+            };
+          });
 
           return {
             messages: { ...state.messages, [chatId]: updatedMessages },
             chats: updatedChats,
+            siteMembers: updatedSiteMembers,
+            activeChatId: state.activeChatId || chatId,
           };
         });
       };
@@ -228,6 +312,8 @@ export const useChatStore = create<ChatState>()(
       socket.on("chat_error", (payload: ChatErrorPayload) => {
         set({
           error: payload?.message || "Chat error",
+          loadingChats: false,
+          loadingSiteMembers: false,
           loadingMessages: false,
         });
       });
@@ -240,17 +326,34 @@ export const useChatStore = create<ChatState>()(
         isConnected: false,
         currentUserId: null,
         activeChatId: null,
+        siteMembers: [],
+        siteMembersPagination: null,
         typingUsers: {},
       });
     },
 
-    fetchChats: () => {
-      console.log("Fetched chats", get().chats);
+    fetchChats: (siteId) => {
       const socket = get().socket;
       const userId = get().currentUserId;
       if (!socket || !userId) return;
       set({ loadingChats: true });
-      socket.emit("fetch_all_chats", { userId });
+      socket.emit("fetch_all_chats", siteId ? { userId, siteId } : { userId });
+    },
+
+    fetchSiteMembers: ({ siteId, page = 1, limit = 50, search, role }) => {
+      const socket = get().socket;
+      const userId = get().currentUserId;
+      if (!socket || !siteId) return;
+
+      set({ loadingSiteMembers: true });
+      socket.emit("fetch_site_members", {
+        userId,
+        siteId,
+        page,
+        limit,
+        search: search || "",
+        role,
+      });
     },
 
     setActiveChatId: (chatId) => {
@@ -266,17 +369,18 @@ export const useChatStore = create<ChatState>()(
     fetchChatHistory: ({ receiverId, page = 1, limit = 20 }) => {
       const socket = get().socket;
       const senderId = get().currentUserId;
-      if (!socket || !senderId) return;
+      const chatId = get().activeChatId;
+      if (!socket || !senderId || !chatId) return;
 
       set((state) => ({
         loadingMessages: true,
         chatPages: {
           ...state.chatPages,
-          [state.activeChatId || ""]: page,
+          [chatId]: page,
         },
       }));
 
-      socket.emit("fetch_chat", { senderId, receiverId, page, limit });
+      socket.emit("fetch_chat", { chatId, senderId, receiverId, page, limit });
     },
 
     loadMoreMessages: (receiverId) => {
@@ -290,7 +394,6 @@ export const useChatStore = create<ChatState>()(
       const hasMore = get().hasMoreMessages[activeChatId] !== false;
       const isLoading = get().loadingMoreMessages;
 
-      // Don't load if already loading or no more messages
       if (isLoading || !hasMore) return;
 
       const nextPage = currentPage + 1;
@@ -303,7 +406,7 @@ export const useChatStore = create<ChatState>()(
         },
       }));
 
-      socket.emit("fetch_chat", { senderId, receiverId, page: nextPage, limit: 20 });
+      socket.emit("fetch_chat", { chatId: activeChatId, senderId, receiverId, page: nextPage, limit: 20 });
     },
 
     sendMessage: ({ receiverId, content, type = "text" }) => {

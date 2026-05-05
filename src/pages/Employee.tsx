@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -32,6 +32,11 @@ import { PaginationControls } from "@/components/PaginationControls";
 import { toast } from "sonner";
 import type { User, Site } from "@/types";
 import { showSuccessToast } from "@/lib/utils";
+
+const displayValue = (value?: string | null) => {
+  const text = value?.trim();
+  return text || "N/A";
+};
 
 export default function Employees() {
   const [employees, setEmployees] = useState<User[]>([]);
@@ -144,13 +149,15 @@ export default function Employees() {
 
     setIsChangingSite(true);
     try {
-      // Update employee with new site
-      // Note: You may need to adjust this based on your actual API endpoint
-      await userService.updateMe({ siteId: selectedSite } as any);
+      const response = await userService.assignUserSite(
+        selectedEmployee._id,
+        selectedSite,
+      );
+      const updatedEmployee = response.user;
       setEmployees(
         employees.map((emp) =>
           emp._id === selectedEmployee._id
-            ? { ...emp, siteId: selectedSite }
+            ? { ...emp, ...updatedEmployee, siteId: selectedSite }
             : emp,
         ),
       );
@@ -204,7 +211,6 @@ export default function Employees() {
               <SelectItem value="all">All Employees</SelectItem>
               <SelectItem value="forklift">Forklift</SelectItem>
               <SelectItem value="subConstructor">Subcontractor</SelectItem>
-              <SelectItem value="user">User</SelectItem>
             </SelectContent>
           </Select>
 
@@ -274,14 +280,16 @@ export default function Employees() {
                           emp.profilePicture ||
                           "https://icon-library.com/images/default-profile-icon/default-profile-icon-6.jpg"
                         }
-                        alt={emp.name}
+                        alt={displayValue(emp.name)}
                         className="h-8 w-8 rounded-full object-cover"
                       />
-                      {emp.name}
+                      {displayValue(emp.name)}
                     </TableCell>
-                    <TableCell className="text-gray-700">{emp.email}</TableCell>
+                    <TableCell className="text-gray-700">
+                      {displayValue(emp.email)}
+                    </TableCell>
                     <TableCell className="text-gray-700 capitalize">
-                      {emp.role}
+                      {displayValue(emp.role)}
                     </TableCell>
                     <TableCell className="text-gray-700">
                       <span
@@ -314,9 +322,11 @@ export default function Employees() {
                         </button>
                         <button
                           onClick={() => openDeleteDialog(emp)}
-                          className="text-red-500 hover:text-red-600 transition-colors cursor-pointer"
+                          className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                          aria-label={`Delete ${displayValue(emp.name)}`}
+                          title="Delete"
                         >
-                          Delete
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </TableCell>
@@ -394,7 +404,7 @@ export default function Employees() {
             <div>
               <label className="text-sm font-medium text-gray-700">Site</label>
               <Select value={selectedSite} onValueChange={setSelectedSite}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 cursor-pointer">
                   <SelectValue placeholder="Select a site" />
                 </SelectTrigger>
                 <SelectContent>

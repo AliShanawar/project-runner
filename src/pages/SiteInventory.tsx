@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Loader2, Upload, X } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { AlertCircle, History, Loader2, Pencil, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -27,7 +28,13 @@ import { uploadImageToS3 } from "@/lib/uploadImageToS3";
 
 type DialogMode = "add" | "edit" | "delete" | null;
 
+const displayValue = (value?: string | null) => {
+  const text = value?.trim();
+  return text || "N/A";
+};
+
 const SiteInventory = () => {
+  const { siteId } = useParams<{ siteId: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,10 +61,15 @@ const SiteInventory = () => {
 
   useEffect(() => {
     const fetchInventory = async () => {
+      if (!siteId) {
+        setError("Site ID is missing");
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
-        const response = await inventoryService.getAllItems({
+        const response = await inventoryService.getItemsBySite(siteId, {
           page,
           limit,
         });
@@ -76,7 +88,7 @@ const SiteInventory = () => {
     };
 
     fetchInventory();
-  }, [page, limit]);
+  }, [page, limit, siteId]);
 
   const openAddDialog = () => {
     setFormData({ name: "", quantity: "", itemUnit: "", image: "" });
@@ -159,6 +171,11 @@ const SiteInventory = () => {
   };
 
   const handleSubmit = async () => {
+    if (!siteId) {
+      toast.error("Site ID is missing");
+      return;
+    }
+
     if (!formData.name || !formData.quantity) {
       toast.error("Please fill in all required fields");
       return;
@@ -170,6 +187,7 @@ const SiteInventory = () => {
         const newItem = await inventoryService.createItem({
           name: formData.name,
           quantity: Number(formData.quantity),
+          siteId,
           itemUnit: formData.itemUnit || undefined,
           image: formData.image || undefined,
         });
@@ -180,6 +198,7 @@ const SiteInventory = () => {
         await inventoryService.updateItem(selectedItem._id, {
           name: formData.name,
           quantity: Number(formData.quantity),
+          siteId,
           itemUnit: formData.itemUnit || undefined,
           image: formData.image || undefined,
         });
@@ -265,6 +284,9 @@ const SiteInventory = () => {
               <TableHeader>
                 <TableRow className="bg-gray-50 border-b border-gray-100">
                   <TableHead className="text-gray-500 font-medium">
+                    Image
+                  </TableHead>
+                  <TableHead className="text-gray-500 font-medium">
                     Name
                   </TableHead>
                   <TableHead className="text-gray-500 font-medium">
@@ -285,15 +307,21 @@ const SiteInventory = () => {
                     key={item._id}
                     className="border-b border-gray-100 hover:bg-gray-50/40 transition-colors"
                   >
-                    <TableCell className="flex items-center gap-3 py-3 font-medium text-gray-800">
-                      {item.image && (
+                    <TableCell className="py-3">
+                      {item.image ? (
                         <img
                           src={item.image}
-                          alt={item.name}
-                          className="w-8 h-8 object-contain"
+                          alt={displayValue(item.name)}
+                          className="h-12 w-12 rounded-lg object-cover border border-gray-100 bg-gray-50"
                         />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-xs font-medium text-gray-400">
+                          N/A
+                        </div>
                       )}
-                      <span>{item.name}</span>
+                    </TableCell>
+                    <TableCell className="py-3 font-medium text-gray-800">
+                      {displayValue(item.name)}
                     </TableCell>
                     <TableCell className="text-gray-700">
                       {item.quantity}
@@ -302,20 +330,28 @@ const SiteInventory = () => {
                       {item.itemUnit}
                     </TableCell>
                     <TableCell className="text-right text-sm font-medium">
-                      <button className="text-[#8A5BD5] hover:text-[#7A4EC3] mr-3 transition-colors cursor-pointer">
-                        History
+                      <button
+                        className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-[#8A5BD5] transition-colors hover:bg-[#8A5BD5]/10 hover:text-[#7A4EC3]"
+                        aria-label={`View history for ${displayValue(item.name)}`}
+                        title="History"
+                      >
+                        <History size={18} />
                       </button>
                       <button
                         onClick={() => openEditDialog(item)}
-                        className="text-[#8A5BD5] hover:text-[#7A4EC3] mr-3 transition-colors cursor-pointer"
+                        className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-[#8A5BD5] transition-colors hover:bg-[#8A5BD5]/10 hover:text-[#7A4EC3]"
+                        aria-label={`Edit ${displayValue(item.name)}`}
+                        title="Edit"
                       >
-                        Edit
+                        <Pencil size={18} />
                       </button>
                       <button
                         onClick={() => openDeleteDialog(item)}
-                        className="text-[#8A5BD5] hover:text-[#7A4EC3] transition-colors cursor-pointer"
+                        className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                        aria-label={`Delete ${displayValue(item.name)}`}
+                        title="Delete"
                       >
-                        Delete
+                        <Trash2 size={18} />
                       </button>
                     </TableCell>
                   </TableRow>

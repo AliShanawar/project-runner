@@ -6,6 +6,13 @@ export interface InventoryItem {
   quantity: number;
   itemUnit?: string;
   image?: string;
+  siteId?:
+    | string
+    | {
+        _id: string;
+        name: string;
+        location?: Record<string, unknown>;
+      };
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
@@ -14,6 +21,7 @@ export interface InventoryItem {
 export interface CreateInventoryRequest {
   name: string;
   quantity: number;
+  siteId: string;
   itemUnit?: string;
   image?: string;
 }
@@ -23,12 +31,14 @@ export interface UpdateInventoryRequest {
   quantity?: number;
   itemUnit?: string;
   image?: string;
+  siteId?: string;
 }
 
 export interface GetInventoryParams {
   page?: number;
   limit?: number;
   search?: string;
+  siteId?: string;
 }
 
 export interface PaginationData {

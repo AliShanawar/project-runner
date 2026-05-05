@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   User,
   Bell,
@@ -10,8 +9,6 @@ import {
   FileText,
   BookText,
   HelpCircle,
-  Globe,
-  Trash2,
   Camera,
   Check,
   Mail,
@@ -24,6 +21,10 @@ import { userService } from "@/api/services/user.service";
 import { toast } from "sonner";
 import { showSuccessToast } from "@/lib/utils";
 import { uploadImageToS3 } from "@/lib/uploadImageToS3";
+import {
+  isStrongPassword,
+  STRONG_PASSWORD_MESSAGE,
+} from "@/lib/passwordValidation";
 
 const tabs = [
   { key: "profile", label: "Profile", icon: User },
@@ -32,8 +33,6 @@ const tabs = [
   { key: "policy", label: "Privacy Policy", icon: FileText },
   { key: "terms", label: "Terms & Condition", icon: BookText },
   { key: "help", label: "Help Center", icon: HelpCircle },
-  { key: "language", label: "Language", icon: Globe },
-  { key: "delete", label: "Delete Account", icon: Trash2 },
 ];
 
 export default function Setting() {
@@ -58,7 +57,7 @@ export default function Setting() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 w-full cursor-pointer px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                   isActive
                     ? "bg-[#8A5BD5]/10 text-[#8A5BD5]"
                     : "text-gray-700 hover:bg-gray-50"
@@ -81,8 +80,6 @@ export default function Setting() {
           {activeTab === "policy" && <TextPage title="Privacy Policy" />}
           {activeTab === "terms" && <TextPage title="Terms & Condition" />}
           {activeTab === "help" && <HelpCenter />}
-          {activeTab === "language" && <Language />}
-          {activeTab === "delete" && <DeleteAccount />}
         </div>
       </div>
 
@@ -124,6 +121,7 @@ const Profile = () => {
   const [name, setName] = useState(user?.name || "");
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const profileImage = user?.image || user?.profilePicture;
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -133,8 +131,8 @@ const Profile = () => {
       setUploading(true);
       const { fileUrl } = await uploadImageToS3(file);
 
-      // Update profile with new avatar URL
-      await updateMe({ profilePicture: fileUrl });
+      // Backend stores profile photos in the `image` field.
+      await updateMe({ image: fileUrl });
 
       showSuccessToast("Profile picture updated successfully!");
     } catch (error) {
@@ -203,9 +201,9 @@ const Profile = () => {
 
       <div className="flex flex-col items-center mt-6 space-y-6">
         <div className="relative">
-          {user?.profilePicture ? (
+          {profileImage ? (
             <img
-              src={user.profilePicture}
+              src={profileImage}
               alt={user.name || "Profile"}
               className="h-24 w-24 rounded-full object-cover"
             />
@@ -293,8 +291,8 @@ const ChangePassword = ({ onSuccess }: { onSuccess: () => void }) => {
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+    if (!isStrongPassword(newPassword)) {
+      toast.error(STRONG_PASSWORD_MESSAGE);
       return;
     }
 
@@ -439,106 +437,3 @@ const HelpCenter = () => (
     </div>
   </>
 );
-
-const Language = () => (
-  <>
-    <h2 className="text-lg font-semibold">Language</h2>
-    <p className="text-sm text-gray-500 mb-6">
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas bibendum
-      laoreet massa quis viverra.
-    </p>
-    <RadioGroup defaultValue="english" className="space-y-3">
-      <label className="flex items-center gap-2">
-        <RadioGroupItem value="english" id="english" />
-        <span>English</span>
-      </label>
-      <label className="flex items-center gap-2">
-        <RadioGroupItem value="polish" id="polish" />
-        <span>Polish</span>
-      </label>
-      <label className="flex items-center gap-2">
-        <RadioGroupItem value="romanian" id="romanian" />
-        <span>Romanian</span>
-      </label>
-    </RadioGroup>
-  </>
-);
-
-const DeleteAccount = () => {
-  const { verifyAndDelete, isLoading } = useUserStore((state) => state);
-  const [password, setPassword] = useState("");
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-
-  const handleDeleteAccount = async () => {
-    // Validation
-    if (!password) {
-      toast.error("Please enter your password");
-      return;
-    }
-
-    if (!acceptedTerms) {
-      toast.error("Please accept the Privacy Policy and Terms of Use");
-      return;
-    }
-
-    // Confirm deletion
-    const confirmed = window.confirm(
-      "Are you absolutely sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted."
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await verifyAndDelete({password , reason: "I want to delete my account"});
-      showSuccessToast("Your account has been successfully deleted. You will be logged out.");
-      // The verifyAndDelete function in the store will automatically logout
-    } catch (error) {
-      console.error("Failed to delete account:", error);
-      toast.error("Failed to delete account. Please check your password and try again.");
-    }
-  };
-
-  return (
-    <>
-      <h2 className="text-lg font-semibold">Delete Account</h2>
-      <p className="text-sm text-gray-500 mb-4">
-        We're sorry to see you go. Please note that this action is permanent and
-        cannot be undone. All your data will be deleted.
-      </p>
-      <div className="max-w-md space-y-4">
-        <Input
-          placeholder="Enter your password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg border-gray-200 focus-visible:ring-[#8A5BD5]"
-        />
-        <label className="flex items-center gap-2 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={acceptedTerms}
-            onChange={(e) => setAcceptedTerms(e.target.checked)}
-            className="accent-[#8A5BD5]"
-          />
-          <span>
-            I accept{" "}
-            <a href="#" className="text-[#8A5BD5] hover:underline">
-              Privacy policy
-            </a>{" "}
-            &{" "}
-            <a href="#" className="text-[#8A5BD5] hover:underline">
-              Terms of use
-            </a>
-          </span>
-        </label>
-      </div>
-      <Button
-        className="bg-red-600 hover:bg-red-700 text-white rounded-lg mt-6"
-        onClick={handleDeleteAccount}
-        disabled={isLoading}
-      >
-        {isLoading ? "Deleting Account..." : "Delete Account"}
-      </Button>
-    </>
-  );
-};

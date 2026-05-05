@@ -1,7 +1,7 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/store/authStore";
 import { AppSidebar } from "@/components/AppSidebar";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 const Dashboard = () => {
   const { isAuthenticated, user } = useAuthStore();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const profileImage = user?.image || user?.profilePicture;
   const isIndustryWorkspace = pathname.startsWith("/dashboard/sites/");
   const isTaskDetail =
     pathname.startsWith("/dashboard/tasks/") &&
@@ -39,11 +41,24 @@ const Dashboard = () => {
                 <button className="relative p-2 hover:bg-muted rounded-lg transition-colors">
                   <Bell size={20} className="text-foreground" />
                 </button>
-                <Avatar>
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user?.name?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                <button
+                  type="button"
+                  onClick={() => navigate("/dashboard/settings")}
+                  className="cursor-pointer rounded-full"
+                  aria-label="Open settings"
+                >
+                  <Avatar>
+                    {profileImage && (
+                      <AvatarImage
+                        src={profileImage}
+                        alt={user?.name || "Profile"}
+                      />
+                    )}
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {user?.name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
               </div>
             </header>
           )}

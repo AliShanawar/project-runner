@@ -22,6 +22,10 @@ interface WorkpackState {
     subcontractorId: string,
     params?: WorkpackQueryParams
   ) => Promise<void>;
+  fetchWorkpacksBySite: (
+    siteId: string,
+    params?: WorkpackQueryParams
+  ) => Promise<void>;
   fetchWorkpackById: (workpackId: string) => Promise<Workpack>;
   createWorkpack: (payload: CreateWorkpackRequest) => Promise<Workpack>;
   updateWorkpack: (
@@ -78,6 +82,27 @@ export const useWorkpackStore = create<WorkpackState>()(
         set({
           isLoading: false,
           error: error?.message || "Failed to load subcontractor workpacks",
+        });
+        throw error;
+      }
+    },
+
+    /* -------------------------
+     * FETCH WORKPACKS BY SITE
+     * ------------------------ */
+    fetchWorkpacksBySite: async (siteId, params) => {
+      try {
+        set({ isLoading: true, error: null });
+        const data = await workpackService.getBySite(siteId, params);
+        set({
+          workpacks: data.workpacks || [],
+          pagination: data.pagination || null,
+          isLoading: false,
+        });
+      } catch (error: any) {
+        set({
+          isLoading: false,
+          error: error?.message || "Failed to load site workpacks",
         });
         throw error;
       }
