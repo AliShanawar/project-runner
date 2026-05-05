@@ -40,15 +40,12 @@ export function AppSidebar() {
         isIconOnly ? "w-[84px]" : "w-[260px]"
       )}
     >
-      {/* Logo */}
-      <div
-        className={cn(
-          "border-b border-[#EAE6F3] py-7",
-          isIconOnly ? "flex justify-center px-4" : "px-6"
-        )}
-      >
-        <Logo />
-      </div>
+      {/* Logo (expanded sidebar only) */}
+      {!isIconOnly && (
+        <div className="border-b border-[#EAE6F3] px-6 py-6">
+          <Logo className="h-14" />
+        </div>
+      )}
 
       {/* Main Content */}
       <SidebarContent className="py-6 px-3">

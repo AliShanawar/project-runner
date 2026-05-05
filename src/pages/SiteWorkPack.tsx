@@ -41,6 +41,7 @@ const SiteWorkPack = () => {
   const { siteId } = useParams<{ siteId: string }>();
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
 
@@ -53,7 +54,15 @@ const SiteWorkPack = () => {
     clearSelected,
   } = useWorkpackStore();
 
-  // Debounce search input
+  const loadWorkpacks = useCallback(async () => {
+    await fetchWorkpacks({
+      page,
+      limit,
+      search: searchTerm || undefined,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+    });
+  }, [fetchWorkpacks, page, limit, searchTerm, statusFilter]);
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setSearchTerm(searchInput.trim());
@@ -63,7 +72,10 @@ const SiteWorkPack = () => {
     return () => clearTimeout(handler);
   }, [searchInput]);
 
-  // Fetch workpacks when filters or pagination change
+  useEffect(() => {
+    setPage(1);
+  }, [limit, statusFilter]);
+
   useEffect(() => {
     const loadWorkpacks = async () => {
       if (!siteId) return;
@@ -83,12 +95,11 @@ const SiteWorkPack = () => {
     loadWorkpacks();
   }, [page, limit, searchTerm, siteId, fetchWorkpacksBySite]);
 
-  // Clear selected workpack on unmount
   useEffect(
     () => () => {
       clearSelected();
     },
-    [clearSelected]
+    [clearSelected],
   );
 
   const totalPages = pagination?.totalPages || 1;
@@ -173,7 +184,10 @@ const SiteWorkPack = () => {
                     className="border-b border-gray-100 hover:bg-gray-50/40 transition-colors"
                   >
                     <TableCell className="py-4 text-gray-800 font-medium">
-                      <div className="max-w-[240px] truncate" title={pack.title}>
+                      <div
+                        className="max-w-[240px] truncate"
+                        title={pack.title}
+                      >
                         {pack.title}
                       </div>
                     </TableCell>
