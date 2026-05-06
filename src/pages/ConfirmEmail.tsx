@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 const ConfirmEmail = () => {
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
-  const [timer, setTimer] = useState(1);
+  const [timer, setTimer] = useState(60);
   const navigate = useNavigate();
 
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -23,9 +23,29 @@ const ConfirmEmail = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
+  const applyOtpDigits = (digits: string[], startIndex: number) => {
+    if (digits.length === 0) return;
+
+    const updated = [...otp];
+    digits.slice(0, otp.length - startIndex).forEach((digit, offset) => {
+      updated[startIndex + offset] = digit;
+    });
+
+    setOtp(updated);
+
+    const nextIndex = Math.min(startIndex + digits.length, otp.length - 1);
+    inputsRef.current[nextIndex]?.focus();
+  };
+
   // Handle OTP input
   const handleChange = (value: string, index: number) => {
     if (!/^\d*$/.test(value)) return; // only digits
+
+    if (value.length > 1) {
+      applyOtpDigits(value.split(""), index);
+      return;
+    }
+
     const updated = [...otp];
     updated[index] = value;
     setOtp(updated);
@@ -35,9 +55,24 @@ const ConfirmEmail = () => {
     }
   };
 
+  const handlePaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    index: number,
+  ) => {
+    const pastedDigits = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .split("");
+
+    if (pastedDigits.length === 0) return;
+
+    e.preventDefault();
+    applyOtpDigits(pastedDigits, index);
+  };
+
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
-    index: number
+    index: number,
   ) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputsRef.current[index - 1]?.focus();
@@ -91,6 +126,7 @@ const ConfirmEmail = () => {
               maxLength={1}
               value={digit}
               onChange={(e) => handleChange(e.target.value, index)}
+              onPaste={(e) => handlePaste(e, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
               ref={(el) => {
                 inputsRef.current[index] = el;
@@ -112,7 +148,7 @@ const ConfirmEmail = () => {
               disabled={isLoading}
               type="button"
               onClick={handleResend}
-              className="text-sm text-primary hover:text-[hsl(261,54%,54%)]"
+              className="text-sm cursor-pointer text-primary hover:text-[hsl(261,54%,54%)]"
             >
               Resend Code
             </button>

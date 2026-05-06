@@ -22,7 +22,7 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider open={!isIndustryWorkspace && !isTaskDetail}>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="h-screen overflow-hidden flex w-full bg-background">
         {!isTaskDetail && <AppSidebar />}
 
         <div className="flex-1 flex flex-col">
@@ -65,7 +65,7 @@ const Dashboard = () => {
 
           <main
             className={cn(
-              "flex-1",
+              "flex-1 overflow-y-auto",
               !isIndustryWorkspace && !isTaskDetail && "p-6"
             )}
           >

@@ -85,6 +85,7 @@ export const useAuthStore = create<AuthState>()(
          * ------------------------ */
         sendResetEmail: async (email) => {
           try {
+            set({ isLoading: true });
             console.log("📩 Sending password reset email to", email);
 
             await authService.forgotPassword({ email });
@@ -92,11 +93,13 @@ export const useAuthStore = create<AuthState>()(
             set({
               resetEmail: email,
               isAuthenticated: false,
+              isLoading: false,
             });
 
             console.log("✅ Reset email sent");
           } catch (error) {
             console.error("❌ Failed to send reset email:", error);
+            set({ isLoading: false });
             throw error;
           }
         },
@@ -154,6 +157,7 @@ export const useAuthStore = create<AuthState>()(
          * ------------------------ */
         verifyResetOtp: async (otp) => {
           try {
+            set({ isLoading: true });
             const { resetEmail } = get();
             if (!resetEmail) {
               throw new Error("No email set for OTP verification");
@@ -170,6 +174,8 @@ export const useAuthStore = create<AuthState>()(
           } catch (error) {
             console.error("❌ OTP verification failed:", error);
             throw error;
+          } finally {
+            set({ isLoading: false });
           }
         },
 
@@ -189,6 +195,8 @@ export const useAuthStore = create<AuthState>()(
               email: resetEmail,
               password,
             });
+
+            set({ resetEmail: null });
 
             console.log("✅ Password reset complete");
           } catch (error) {
@@ -260,6 +268,7 @@ export const useAuthStore = create<AuthState>()(
         partialize: (state) => ({
           user: state.user,
           isAuthenticated: state.isAuthenticated,
+          resetEmail: state.resetEmail,
         }),
       }
     )

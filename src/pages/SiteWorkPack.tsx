@@ -41,7 +41,6 @@ const SiteWorkPack = () => {
   const { siteId } = useParams<{ siteId: string }>();
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
 
@@ -54,15 +53,6 @@ const SiteWorkPack = () => {
     clearSelected,
   } = useWorkpackStore();
 
-  const loadWorkpacks = useCallback(async () => {
-    await fetchWorkpacks({
-      page,
-      limit,
-      search: searchTerm || undefined,
-      status: statusFilter !== "all" ? statusFilter : undefined,
-    });
-  }, [fetchWorkpacks, page, limit, searchTerm, statusFilter]);
-
   useEffect(() => {
     const handler = setTimeout(() => {
       setSearchTerm(searchInput.trim());
@@ -74,7 +64,7 @@ const SiteWorkPack = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [limit, statusFilter]);
+  }, [limit]);
 
   useEffect(() => {
     const loadWorkpacks = async () => {

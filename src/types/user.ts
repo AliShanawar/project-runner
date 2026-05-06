@@ -1,5 +1,17 @@
 /* ==================== USER TYPES ==================== */
 
+export interface UserSiteSummary {
+  _id: string;
+  name: string;
+  location?: {
+    address?: string;
+    coordinates?: {
+      latitude?: number;
+      longitude?: number;
+    };
+  };
+}
+
 export interface User {
   _id: string;
   id?: string; // Keep for backward compatibility if needed
@@ -23,7 +35,7 @@ export interface User {
       email: string;
     };
   };
-  siteId?: string | null;
+  siteId?: string | UserSiteSummary | null;
   isBlocked?: boolean;
   isSocial?: boolean;
   verified?: boolean;

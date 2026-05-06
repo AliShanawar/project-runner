@@ -38,6 +38,16 @@ const displayValue = (value?: string | null) => {
   return text || "N/A";
 };
 
+const getSiteIdValue = (siteId: User["siteId"]) => {
+  if (!siteId) return "";
+  return typeof siteId === "string" ? siteId : siteId._id;
+};
+
+const getSiteName = (siteId: User["siteId"]) => {
+  if (!siteId || typeof siteId === "string") return "N/A";
+  return displayValue(siteId.name);
+};
+
 export default function Employees() {
   const [employees, setEmployees] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -111,7 +121,7 @@ export default function Employees() {
 
   const openChangeSiteDialog = (employee: User) => {
     setSelectedEmployee(employee);
-    setSelectedSite(employee.siteId || "");
+    setSelectedSite(getSiteIdValue(employee.siteId));
     setChangeSiteDialogOpen(true);
     fetchSites();
   };
@@ -154,10 +164,20 @@ export default function Employees() {
         selectedSite,
       );
       const updatedEmployee = response.user;
+      const selectedSiteDetails = sites.find((site) => site._id === selectedSite);
       setEmployees(
         employees.map((emp) =>
           emp._id === selectedEmployee._id
-            ? { ...emp, ...updatedEmployee, siteId: selectedSite }
+            ? {
+                ...emp,
+                ...updatedEmployee,
+                siteId:
+                  updatedEmployee?.siteId ||
+                  selectedSiteDetails || {
+                    _id: selectedSite,
+                    name: "N/A",
+                  },
+              }
             : emp,
         ),
       );
@@ -240,25 +260,28 @@ export default function Employees() {
           ) : employees.length === 0 ? (
             <div className="text-gray-500 py-8">No employees found.</div>
           ) : (
-            <Table className="bg-transparent">
+            <Table className="min-w-[1180px] table-fixed bg-transparent">
               <TableHeader>
                 <TableRow className="bg-gray-50 border-b border-gray-100">
-                  <TableHead className="text-gray-500 font-medium py-3 w-10">
+                  <TableHead className="w-12 text-gray-500 font-medium py-3">
                     #
                   </TableHead>
-                  <TableHead className="text-gray-500 font-medium py-3">
+                  <TableHead className="w-[220px] text-gray-500 font-medium py-3">
                     Name
                   </TableHead>
-                  <TableHead className="text-gray-500 font-medium py-3">
+                  <TableHead className="w-[310px] text-gray-500 font-medium py-3">
                     Email
                   </TableHead>
-                  <TableHead className="text-gray-500 font-medium py-3">
+                  <TableHead className="w-[160px] text-gray-500 font-medium py-3">
                     Role
                   </TableHead>
-                  <TableHead className="text-gray-500 font-medium py-3">
+                  <TableHead className="w-[180px] text-gray-500 font-medium py-3">
+                    Site
+                  </TableHead>
+                  <TableHead className="w-[130px] text-gray-500 font-medium py-3">
                     Status
                   </TableHead>
-                  <TableHead className="text-gray-500 font-medium py-3 text-right">
+                  <TableHead className="w-[168px] text-gray-500 font-medium py-3 text-right">
                     Action
                   </TableHead>
                 </TableRow>
@@ -273,23 +296,30 @@ export default function Employees() {
                     <TableCell className="py-4 text-gray-800 font-medium">
                       {(pagination.currentPage - 1) * limit + index + 1}
                     </TableCell>
-                    <TableCell className="flex items-center gap-3 text-gray-800 font-medium">
-                      <img
-                        src={
-                          emp.image ||
-                          emp.profilePicture ||
-                          "https://icon-library.com/images/default-profile-icon/default-profile-icon-6.jpg"
-                        }
-                        alt={displayValue(emp.name)}
-                        className="h-8 w-8 rounded-full object-cover"
-                      />
-                      {displayValue(emp.name)}
+                    <TableCell className="text-gray-800 font-medium">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <img
+                          src={
+                            emp.image ||
+                            emp.profilePicture ||
+                            "https://icon-library.com/images/default-profile-icon/default-profile-icon-6.jpg"
+                          }
+                          alt={displayValue(emp.name)}
+                          className="h-8 w-8 shrink-0 rounded-full object-cover"
+                        />
+                        <span className="min-w-0 truncate">
+                          {displayValue(emp.name)}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-gray-700">
+                    <TableCell className="truncate text-gray-700">
                       {displayValue(emp.email)}
                     </TableCell>
-                    <TableCell className="text-gray-700 capitalize">
+                    <TableCell className="truncate text-gray-700 capitalize">
                       {displayValue(emp.role)}
+                    </TableCell>
+                    <TableCell className="truncate text-gray-700">
+                      {getSiteName(emp.siteId)}
                     </TableCell>
                     <TableCell className="text-gray-700">
                       <span

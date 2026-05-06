@@ -11,7 +11,6 @@ import {
   Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Logo from "@/components/Logo";
 import { useAuthStore } from "@/store/authStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -32,14 +31,10 @@ const IndustryLayout = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#F7F7F9]">
+    <div className="flex h-full bg-[#F7F7F9]">
       {/* Sidebar */}
-      <aside className="sticky top-0 h-screen w-[260px] shrink-0 bg-white border-r border-[#EAE6F3] shadow-[0_12px_30px_rgba(17,12,34,0.04)] flex flex-col">
-        <div className="px-6 py-7 border-b border-[#EAE6F3]">
-          <Logo />
-        </div>
-
-        <nav className="flex flex-col gap-3 px-4 pt-12 pb-8 space-y-4">
+      <aside className="h-full w-[260px] shrink-0 bg-white border-r border-[#EAE6F3] shadow-[0_12px_30px_rgba(17,12,34,0.04)] flex flex-col">
+        <nav className="flex-1 overflow-y-auto flex flex-col gap-3 px-4 pt-6 pb-8 space-y-4">
           {navItems.map(({ label, path, icon: Icon }) => (
             <NavLink
               key={path}

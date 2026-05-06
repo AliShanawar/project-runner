@@ -22,9 +22,16 @@ const CreatePassword = () => {
   const navigate = useNavigate();
 
   const resetPassword = useAuthStore((state) => state.resetPassword);
+  const resetEmail = useAuthStore((state) => state.resetEmail);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!resetEmail) {
+      toast.error("Please request a password reset again.");
+      navigate("/forgot-password");
+      return;
+    }
 
     if (password !== confirm) {
       toast.error("Passwords do not match!");
