@@ -1,6 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 
-const DEFAULT_SOCKET_URL = "https://ighly-dialyzable-amie.ngrok-free.dev";
+const DEFAULT_SOCKET_URL = "https://api.projectrunneruk.com";
 
 let socket: Socket | null = null;
 let activeUserId: string | null = null;
