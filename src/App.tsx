@@ -117,7 +117,7 @@ const App = () => (
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/dashboard/tasks" replace />} />
+            <Route index element={<Navigate to="/dashboard/sites" replace />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="sites/task" element={<Tasks />} />
             <Route path="requests" element={<Requests />} />
