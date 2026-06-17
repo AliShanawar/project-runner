@@ -47,7 +47,7 @@ const Dashboard = () => {
                   className="cursor-pointer rounded-full"
                   aria-label="Open settings"
                 >
-                  <Avatar>
+                  <Avatar className="size-10">
                     {profileImage && (
                       <AvatarImage
                         src={profileImage}

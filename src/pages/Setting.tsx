@@ -200,40 +200,53 @@ const Profile = () => {
       </p>
 
       <div className="flex flex-col items-center mt-6 space-y-6">
-        <div className="relative">
-          {profileImage ? (
-            <img
-              src={profileImage}
-              alt={user.name || "Profile"}
-              className="h-24 w-24 rounded-full object-cover"
-            />
-          ) : (
-            <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
-              <User size={48} />
-            </div>
-          )}
-          {isEditing && (
-          <label
-            htmlFor="avatar-upload"
-            className={`absolute bottom-1 right-1 bg-[#8A5BD5] text-white rounded-full p-1.5 cursor-pointer hover:bg-[#7A4EC3] transition ${
-              uploading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            {uploading ? (
-              <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
-            ) : (
-              <Camera size={14} />
-            )}
-            <input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-              disabled={uploading}
-            />
+        <div className="w-full max-w-sm space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            Profile Picture
           </label>
-          )}
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt={user.name || "Profile"}
+                  className="h-24 w-24 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
+                  <User size={48} />
+                </div>
+              )}
+              {isEditing && (
+                <label
+                  htmlFor="avatar-upload"
+                  className={`absolute bottom-1 right-1 bg-[#8A5BD5] text-white rounded-full p-1.5 cursor-pointer hover:bg-[#7A4EC3] transition ${
+                    uploading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {uploading ? (
+                    <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <Camera size={14} />
+                  )}
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                  />
+                </label>
+              )}
+            </div>
+            {isEditing && (
+              <p className="text-xs text-gray-500">
+                Click camera icon to upload new picture. JPG or PNG, square
+                image recommended.
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="w-full max-w-sm space-y-2">
