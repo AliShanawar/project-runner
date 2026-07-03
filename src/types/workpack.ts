@@ -16,6 +16,7 @@ export interface Workpack {
   description?: string;
   status: WorkpackStatus;
   createdBy: WorkpackUser;
+  assignedTo?: WorkpackUser[];
   siteId?: string;
   isDeleted?: boolean;
   createdAt: string;
@@ -50,6 +51,7 @@ export interface CreateWorkpackRequest {
   title: string;
   description?: string;
   siteId?: string;
+  assignedTo?: string[];
 }
 
 export interface UpdateWorkpackRequest extends Partial<CreateWorkpackRequest> {
